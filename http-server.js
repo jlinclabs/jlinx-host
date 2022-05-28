@@ -5,31 +5,28 @@ const Path = require('path')
 const express = require('express')
 const ExpressPromiseRouter = require('express-promise-router')
 const bodyParser = require('body-parser')
+const { keyToString } = require('jlinx-util')
 
 const debug = Debug('jlinx:http-server')
 
 
-module.exports = function (opts) {
+module.exports = function (jlinx) {
 
   const app = express()
 
-  // app.port = opts.port
-  app.jlinx = opts.jlinx
-
-  app.start = async function start(port){
+  app.start = async function start(options = {}){
     debug('starting')
 
     debug('connecting to jlinx…')
-    app.ready = app.jlinx.connected().then(async () => {
-      const agentPublicKey = await app.jlinx.publicKey
-      app.locals.agentPublicKey = agentPublicKey
-      console.log(`jlinx agent public key: ${agentPublicKey}`)
+    app.ready = jlinx.connected().then(async () => {
+      console.log(`jlinx agent public key: ${jlinx.publicKey}`)
     })
 
-    app.server = http.createServer(app).listen(port)
+    app.server = http.createServer(app).listen(options.port)
     // app.server = await promisify(app.listen).call(app, port)
     app.port = app.server.address().port
-    console.log(`jlinx http server running http://localhost:${app.port}`)
+    app.url = options.url || `http://localhost:${app.port}`
+    console.log(`jlinx http server running ${app.url}`)
   }
 
   app.destroy = function stop() {
@@ -50,46 +47,69 @@ module.exports = function (opts) {
     next()
   })
 
-  app.routes.get('/', async (req, res, next) => {
-    const { did } = req.query
-    if (did && did.startsWith('did:')) return res.redirect(`/${did}`)
+  app.routes.get('/', async (req, res) => {
+    res.json({
+      status: 'ok',
+      publicKey: jlinx.publicKey,
+    })
+  })
 
-    if (req.accepts('html')) return res.render('index')
+  app.routes.get('/status', async (req, res) => {
+    const status = await jlinx.node.status()
+    res.json(status)
+  })
+
+  app.routes.post('/create', async (req, res) => {
+    const {
+      ownerSigningKey,
+      ownerSigningKeyProof
+    } = req.body
+    const doc = await jlinx.create({
+      ownerSigningKey,
+      ownerSigningKeyProof
+    })
+    res.json({ id: doc.id })
+  })
+
+  const KEY_ROUTE_REGEXP = /^\/([A-Za-z0-9\-_]{43})$/
+  app.routes.use(KEY_ROUTE_REGEXP, async (req, res, next) => {
+    req.key = req.params[0]
+    console.log({ key: req.key })
     next()
   })
 
   // get
-  app.routes.use(/^([A-Za-z0-9\-_]{43})$/, async (req, res, next) => {
-    req.key = req.params[0]
-    console.log({ key: req.key })
-    next()
-    // if (!isJlinxDid(req.did))
-    //   renderError(req, res, `invalid did DID=${req.did}`, 400)
-    // else
-    //   next()
-  })
-
-
-  app.routes.get('/status', async (req, res, next) => {
-    const status = await app.jlinx.server.hypercore.status()
+  app.routes.get(KEY_ROUTE_REGEXP, async (req, res) => {
+    const { key } = req
+    const doc = await jlinx.get(key)
+    if (!doc) return res.status(404).json({})
+    await doc.ready()
+    let header
+    if (doc.length > 0) header = await doc.get(0)
     res.json({
-      hypercore: status,
+      id: doc.id,
+      length: doc.length,
+      header,
     })
   })
 
-  app.routes.post('/new', async (req, res, next) => {
-    const { did, secret } = await app.jlinx.server.createDid()
-    res.json({ did, secret })
+  // append
+  app.routes.post(KEY_ROUTE_REGEXP, async (req, res) => {
+    const { key } = req
+    // const { did } = req
+    // const { secret, value } = req.body
+    // debug('amending did')
+    // await jlinx.server.amendDid({
+    //   did, secret, value
+    // })
+    // res.json({})
   })
 
-  app.routes.post(/^\/(did:.+)$/, async (req, res, next) => {
-    const { did } = req
-    const { secret, value } = req.body
-    debug('amending did')
-    await app.jlinx.server.amendDid({
-      did, secret, value
+  app.routes.use(async (error, req, res, next) => {
+    res.status(500).json({
+      error: `${error}`,
+      stack: error.stack.split('\n'),
     })
-    res.json({})
   })
 
   return app

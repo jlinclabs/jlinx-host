@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "lint": "standard",
-    "test": "tape test/*.js"
+    "test": "tape test/*.js",
+    "start": "./scripts/start.js",
+    "dev:start": "nodemon -w . --exec ./scripts/start.js"
   },
   "repository": {
     "type": "git",
@@ -24,12 +26,13 @@
   "dependencies": {
     "debug": "^4.3.4",
     "dotenv": "^16.0.1",
-    "express-promise-router": "^4.1.1",
     "express": "^4.18.1",
+    "express-promise-router": "^4.1.1",
     "jlinx-node": "github:jlinclabs/jlinx-node",
     "jlinx-util": "github:jlinclabs/jlinx-util"
   },
   "devDependencies": {
+    "nodemon": "^2.0.16",
     "standard": "^17.0.0",
     "tape": "^5.5.3",
     "tmp-promise": "^3.0.3"
