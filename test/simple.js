@@ -1,63 +1,85 @@
 const b4a = require('b4a')
-const { createSigningKeyPair } = require('jlinx-util')
+const {
+  keyToBuffer,
+  sign,
+  createSigningKeyPair
+} = require('jlinx-util')
 const { test } = require('./helpers/index.js')
 
-test('hosting a document', async (t, createHost) => {
+test('simple', async (t, createHost) => {
   const host = await createHost()
-  console.log({ host })
-  t.same(typeof host.httpServer.port, 'number')
+  t.ok(host)
 
-  const signingKeyPair = createSigningKeyPair()
+  const ownerKeyPair = createSigningKeyPair()
+  const ownerSigningKey = ownerKeyPair.publicKey
+  const ownerSigningKeyProof = sign(
+    keyToBuffer(host.publicKey),
+    ownerKeyPair.secretKey
+  )
+  const doc1Id = await host.create({
+    ownerSigningKey,
+    ownerSigningKeyProof,
+  })
+  t.ok(doc1Id)
 
+  t.same(
+    await host.getInfo(doc1Id),
+    undefined
+  )
 
-  // const doc1 = await host.create()
-  // t.same(doc1.writable, true)
-  // t.same(doc1.length, 0)
+  t.deepEqual(
+    await host.append(
+      doc1Id,
+      b4a.from('one'),
+      sign(
+        b4a.from('one'),
+        ownerKeyPair.secretKey
+      )
+    ),
+    { id: doc1Id, length: 1 }
+  )
 
-  // await doc1.append([
-  //   b4a.from('one'),
-  //   b4a.from('two'),
-  // ])
-  // t.same(doc1.length, 2)
-  // t.same(await doc1.get(0), b4a.from('one'))
-  // t.same(await doc1.get(1), b4a.from('two'))
-  // t.end()
+  t.same(
+    await host.getInfo(doc1Id),
+    { id: doc1Id, length: 1 }
+  )
+
+  t.ok(
+    b4a.equals(
+      await host.getEntry(doc1Id, 0),
+      b4a.from('one')
+    )
+  )
+
+  t.deepEqual(
+    await host.append(
+      doc1Id,
+      b4a.from('two'),
+      sign(
+        b4a.from('two'),
+        ownerKeyPair.secretKey
+      )
+    ),
+    { id: doc1Id, length: 2 }
+  )
+
+  t.same(
+    await host.getInfo(doc1Id),
+    { id: doc1Id, length: 2 }
+  )
+
+  t.ok(
+    b4a.equals(
+      await host.getEntry(doc1Id, 0),
+      b4a.from('one')
+    )
+  )
+
+  t.ok(
+    b4a.equals(
+      await host.getEntry(doc1Id, 1),
+      b4a.from('two')
+    )
+  )
+
 })
-
-
-// test('creating a MicroLedger', async t => {
-//   const keyPair = createSigningKeyPair()
-
-//   const jlinx = new JlinxServer({
-//     publicKey: keyToString(keyPair.publicKey),
-//     storagePath: await getTmpDirPath()
-//   })
-//   await jlinx.keys.set(keyPair)
-//   await jlinx.ready()
-//   const events1 = await jlinx.create('MicroLedger')
-//   t.same(events1.writable, true)
-//   t.same(events1.length, 0)
-//   t.deepEqual(await events1.all(), [])
-
-//   await events1.append([
-//     { eventOne: 1 }
-//   ])
-//   t.same(events1.length, 1)
-//   t.deepEqual(await events1.all(), [
-//     { eventOne: 1 }
-//   ])
-
-//   await events1.append([
-//     { eventTwo: 2 },
-//     { eventThree: 3 }
-//   ])
-//   console.log(await events1.all())
-//   t.same(events1.length, 3)
-//   t.deepEqual(await events1.all(), [
-//     { eventThree: 3 },
-//     { eventTwo: 2 },
-//     { eventOne: 1 }
-//   ])
-
-//   t.end()
-// })

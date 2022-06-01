@@ -18,8 +18,10 @@ const createHttpServer = require('../http-server')
 const jlinx = new JlinxHost({
   url: process.env.URL,
   storagePath: process.env.JLINX_STORAGE,
-  publicKey: b4a.from(process.env.JLINX_PUBLIC_KEY, 'hex'),
-  secretKey: b4a.from(process.env.JLINX_SECRET_KEY, 'hex'),
+  keyPair: {
+    publicKey: b4a.from(process.env.JLINX_PUBLIC_KEY, 'hex'),
+    secretKey: b4a.from(process.env.JLINX_SECRET_KEY, 'hex'),
+  },
   vaultKey: b4a.from(process.env.JLINX_VAULT_KEY, 'hex'),
 })
 

@@ -65,46 +65,48 @@ module.exports = function (jlinx) {
       ownerSigningKeyProof
     } = req.body
     debug('creating', { ownerSigningKey })
-    const doc = await jlinx.create({
+    const id = await jlinx.create({
       ownerSigningKey: Buffer.from(ownerSigningKey, 'hex'),
       ownerSigningKeyProof: Buffer.from(ownerSigningKeyProof, 'hex')
     })
-    debug('created', doc)
-    res.json({ id: doc.id })
+    res.json({ id })
   })
 
-  const KEY_ROUTE_REGEXP = /^\/([A-Za-z0-9\-_]{43})$/
-  app.routes.use(KEY_ROUTE_REGEXP, async (req, res, next) => {
-    req.key = req.params[0]
+  // const KEY_ROUTE_REGEXP = /^\/([A-Za-z0-9\-_]{43})$/
+  app.routes.use(/^\/([A-Za-z0-9\-_]{43})(\/|$)/, async (req, res, next) => {
+    req.id = req.params[0]
     console.log({ key: req.key })
     next()
   })
 
-  // get
-  app.routes.get(KEY_ROUTE_REGEXP, async (req, res) => {
-    const { key } = req
-    const doc = await jlinx.get(key)
-    if (!doc) return res.status(404).json({})
-    await doc.ready()
-    let header
-    if (doc.length > 0) header = await doc.get(0)
-    res.json({
-      id: doc.id,
-      length: doc.length,
-      header,
-    })
+  // getInfo (id)
+  app.routes.get(/^\/([A-Za-z0-9\-_]{43})$/, async (req, res) => {
+    const { id } = req
+    debug('getInfo', { id })
+    const info = await jlinx.getInfo(req.id)
+    debug('getInfo', { id, info })
+    if (!info) return res.status(404).json({})
+    res.json(info)
+    // TODO consider streaming entire core here
+  })
+
+  // getEntry (id, index)
+  app.routes.get(/^\/([A-Za-z0-9\-_]{43})\/(\d+)$/, async (req, res) => {
+    // const { id } = req
+    const id = req.params[0]
+    const index = parseInt(req.params[1], 10)
+    debug('getEntry', { id, index })
+    const entry = await jlinx.getEntry(id, index)
+    if (!entry) return res.status(404).end()
+    res.send(entry)
   })
 
   // append
-  app.routes.post(KEY_ROUTE_REGEXP, async (req, res) => {
-    const { key } = req
-    // const { did } = req
-    // const { secret, value } = req.body
-    // debug('amending did')
-    // await jlinx.server.amendDid({
-    //   did, secret, value
-    // })
-    // res.json({})
+  app.routes.post(/^\/([A-Za-z0-9\-_]{43})$/, async (req, res) => {
+    debug('append', { id })
+    const signature = req.header('jlinx-signature')
+    await jlinx.append(req.id, req.body, signature)
+    res.end()
   })
 
   app.routes.use(async (error, req, res, next) => {

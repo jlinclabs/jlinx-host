@@ -2,6 +2,8 @@ const tape = require('tape')
 const tmp = require('tmp-promise')
 const fs = require('node:fs/promises')
 const HyperDHT = require('@hyperswarm/dht')
+const Vault = require('jlinx-vault')
+const { createSigningKeyPair } = require('jlinx-util')
 
 const JlinxHost = require('../../index.js')
 
@@ -40,6 +42,9 @@ module.exports.test = function(name, fn, _tape = tape) {
       const jlinxHost = new JlinxHost({
         storagePath: await newTmpDir(),
         bootstrap,
+        url: `http://example.com`,
+        keyPair: createSigningKeyPair(),
+        vaultKey: Vault.generateKey()
       })
       jlinxHosts.push(jlinxHost)
       await jlinxHost.ready()
