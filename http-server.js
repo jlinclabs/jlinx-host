@@ -64,10 +64,12 @@ module.exports = function (jlinx) {
       ownerSigningKey,
       ownerSigningKeyProof
     } = req.body
+    debug('creating', { ownerSigningKey })
     const doc = await jlinx.create({
-      ownerSigningKey,
-      ownerSigningKeyProof
+      ownerSigningKey: Buffer.from(ownerSigningKey, 'hex'),
+      ownerSigningKeyProof: Buffer.from(ownerSigningKeyProof, 'hex')
     })
+    debug('created', doc)
     res.json({ id: doc.id })
   })
 
@@ -106,6 +108,7 @@ module.exports = function (jlinx) {
   })
 
   app.routes.use(async (error, req, res, next) => {
+    debug('ERROR', error)
     res.status(500).json({
       error: `${error}`,
       stack: error.stack.split('\n'),

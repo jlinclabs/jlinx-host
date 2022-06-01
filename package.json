@@ -24,10 +24,12 @@
   },
   "homepage": "https://github.com/jlinclabs/jlinx-host#readme",
   "dependencies": {
+    "b4a": "^1.5.3",
     "debug": "^4.3.4",
     "dotenv": "^16.0.1",
     "express": "^4.18.1",
     "express-promise-router": "^4.1.1",
+    "jlinx-keystore": "file:../keystore",
     "jlinx-node": "github:jlinclabs/jlinx-node",
     "jlinx-util": "github:jlinclabs/jlinx-util"
   },
