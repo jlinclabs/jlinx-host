@@ -4,8 +4,9 @@ const JlinxNode = require('jlinx-node')
 const {
   keyToBuffer,
   keyToString,
-  sign,
+  // sign,
   verify,
+  createSigningKeyPair,
   validateSigningKeyPair,
 } = require('jlinx-util')
 const Vault = require('jlinx-vault')
@@ -87,6 +88,7 @@ module.exports = class JlinxHost {
   }
 
   async getLength (id) {
+    console.log('this.node', this.node)
     return await this.node.getLength(id)
   }
 

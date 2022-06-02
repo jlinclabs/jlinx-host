@@ -38,7 +38,7 @@ module.exports = function (jlinx) {
   app.use(bodyParser.json({ }))
 
   // ROUTES
-  app.routes = new ExpressPromiseRouter({ mergeParams: true })
+  app.routes = new ExpressPromiseRouter
   app.use(app.routes)
 
   app.routes.use(async (req, res, next) => {
@@ -64,57 +64,48 @@ module.exports = function (jlinx) {
       ownerSigningKey,
       ownerSigningKeyProof
     } = req.body
+    if (
+      !ownerSigningKey ||
+      !ownerSigningKeyProof
+    ) return res.status(400).end()
     const id = await jlinx.create({
       ownerSigningKey: Buffer.from(ownerSigningKey, 'hex'),
       ownerSigningKeyProof: Buffer.from(ownerSigningKeyProof, 'hex')
     })
-    res.json({ id })
-  })
-
-
-  const slashId = new ExpressPromiseRouter
-  app.routes.use(
-    /^\/([A-Za-z0-9\-_]{43})(?:\/.+|$)/,
-    (req, res, next) => {
-      req.id = req.params[0]
-      debug({ id: req.id })
-      return slashId(req, res, next)
-    }
-  )
-
-  slashId.use(async (req, res, next) => {
-    debug({ url: req.url })
-    next()
+    res.status(201).json({ id, legnth: 0 })
   })
 
   // getLength (id)
-  // GET /:id
-  slashId.get('/', async (req, res) => {
-    const length = await jlinx.getLength(req.id)
+  app.routes.get(/^\/([A-Za-z0-9\-_]{43})$/, async (req, res) => {
+    const id = req.params[0]
+    debug('getLength', { id })
+    const length = await jlinx.getLength(id)
     res.json({ length })
     // TODO consider streaming entire core here if accepts
   })
 
   // getEntry (id, index)
-  // GET /:id/:index
-  slashId.get(/^\/(\d+)$/, async (req, res) => {
-    debug({ params: req.params })
-    const index = parseInt(req.params[0], 10)
-    const entry = await jlinx.getEntry(req.id, index)
+  app.routes.get(/^\/([A-Za-z0-9\-_]{43})\/(\d+)$/, async (req, res) => {
+    const id = req.params[0]
+    const index = parseInt(req.params[1], 10)
+    debug('getEntry', { id, index })
+    const entry = await jlinx.getEntry(id, index)
+    debug('getEntry sending', entry)
     res.send(entry)
   })
 
   // append
-  // POST /:id
-  slashId.post('/', async (req, res) => {
+  app.routes.post(/^\/([A-Za-z0-9\-_]{43})$/, async (req, res) => {
+    const id = req.params[0]
+    debug('append', { id })
     const signature = req.header('jlinx-signature')
-    await jlinx.append(req.id, req.body, signature)
+    await jlinx.append(id, req.body, signature)
     res.end()
   })
 
   // onChange
-  // GET /:id/change
-  slashId.get('change', async (req, res) => {
+
+  app.routes.get(/^\/([A-Za-z0-9\-_]{43})\/onchange$/, async (req, res) => {
     res.json({ TBD: true })
   })
 
