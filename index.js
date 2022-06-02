@@ -77,24 +77,21 @@ module.exports = class JlinxHost {
       throw new Error(`invalid ownerSigningKeyProof`)
     }
     // this.keys.set({ publicKey: ownerSigningKey })
-    const doc = await this.node.create()
-    debug('created', doc)
-    await this.hostKeys.set(doc.id, doc.secretKey)
-    await this.ownerKeys.set(doc.id, ownerSigningKey)
-    return doc.id
+    // const doc = await this.node.create()
+    const { publicKey, secretKey } = createSigningKeyPair()
+    const id = keyToString(publicKey)
+    debug('created', { id })
+    await this.hostKeys.set(id, secretKey)
+    await this.ownerKeys.set(id, ownerSigningKey)
+    return id
   }
 
-  async getInfo (id) {
-    // const secretKey = await this.hostKeys.get(id)
-    const doc = await this.node.get(id)
-    debug('getInfo', { id, doc })
-    if (!doc) return
-    return doc.info()
+  async getLength (id) {
+    return await this.node.getLength(id)
   }
 
   async getEntry (id, index) {
-    const doc = await this.node.get(id)
-    if (doc) return await doc.get(index)
+    return this.node.getEntry(id, index)
   }
 
   async append(id, block, signature){
@@ -112,15 +109,83 @@ module.exports = class JlinxHost {
     if (!validSignature){
       throw new Error('invalid signature')
     }
-    const doc = await this.node.get(id, secretKey)
-    if (!doc || !doc.writable){
-      throw new Error('unauthorized')
-    }
-    await doc.append(block)
-    return {
-      id: doc.id,
-      length: doc.length,
-    }
+    return await this.node.append(id, secretKey, [block])
+    // const doc = await this.node.get(id, secretKey)
+    // if (!doc || !doc.writable){
+    //   throw new Error('unauthorized')
+    // }
+    // await doc.append(block)
+    // return {
+    //   id: doc.id,
+    //   length: doc.length,
+    // }
   }
 
 }
+
+
+
+// class Document {
+//   constructor (node, core, secretKey) {
+//     this.node = node
+//     this.core = core
+//     this.secretKey = secretKey
+//     this.id = keyToString(core.key)
+//     this._subs = new Set()
+//     this.core.on('close', () => this._close())
+//     this.core.on('append', () => this._onAppend())
+//   }
+
+//   // get key () { return this.core.key }
+//   // get publicKey () { return keyToBuffer(this.core.key) }
+//   get writable () { return this.core.writable }
+//   get length () { return this.core.length }
+//   ready () { return this.core.ready() }
+//   _close () {
+//     console.log('??_close', this.key)
+//   }
+
+//   _onAppend () {
+//     this._subs.forEach(handler => {
+//       Promise.resolve()
+//         .then(() => handler(this))
+//         .catch(error => {
+//           console.error(error)
+//         })
+//     })
+//   }
+
+//   async info() {
+//     await this.ready()
+//     return {
+//       id: this.id,
+//       length: this.length,
+//       // consider more metadata here like host or docType
+//     }
+//   }
+//   get (index) {
+//     return this.core.get(index)
+//   }
+
+//   append (blocks) {
+//     if (!this.writable){
+//       throw new Error(`jlinx document is not writable`)
+//     }
+//     return this.core.append(blocks)
+//   }
+
+//   sub (handler) {
+//     this._subs.add(handler)
+//     return () => { this._subs.delete(handler) }
+//   }
+
+//   [Symbol.for('nodejs.util.inspect.custom')] (depth, opts) {
+//     let indent = ''
+//     if (typeof opts.indentationLvl === 'number') { while (indent.length < opts.indentationLvl) indent += ' ' }
+//     return this.constructor.name + '(\n' +
+//       indent + '  id: ' + opts.stylize(this.id, 'string') + '\n' +
+//       indent + '  writable: ' + opts.stylize(this.writable, 'boolean') + '\n' +
+//       indent + '  length: ' + opts.stylize(this.length, 'number') + '\n' +
+//       indent + ')'
+//   }
+// }
