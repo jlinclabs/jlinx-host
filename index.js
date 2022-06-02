@@ -88,7 +88,6 @@ module.exports = class JlinxHost {
   }
 
   async getLength (id) {
-    console.log('this.node', this.node)
     return await this.node.getLength(id)
   }
 

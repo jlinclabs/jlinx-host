@@ -34,6 +34,7 @@
     "jlinx-vault": "github:jlinclabs/jlinx-vault"
   },
   "devDependencies": {
+    "@hyperswarm/dht": "^5.0.25",
     "assert": "^2.0.0",
     "node-fetch": "^3.2.5",
     "nodemon": "^2.0.16",

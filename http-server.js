@@ -1,5 +1,5 @@
 const Debug = require('debug')
-const { promisify } = require('util')
+const b4a = require('b4a')
 const http = require('http')
 const Path = require('path')
 const express = require('express')
@@ -23,7 +23,6 @@ module.exports = function (jlinx) {
     })
 
     app.server = http.createServer(app).listen(options.port)
-    // app.server = await promisify(app.listen).call(app, port)
     app.port = app.server.address().port
     app.url = options.url || `http://localhost:${app.port}`
     console.log(`jlinx http server running ${app.url}`)
@@ -34,8 +33,10 @@ module.exports = function (jlinx) {
   }
 
   // app.use(express.static(__dirname + '/public'));
-  app.use(bodyParser.urlencoded({ extended: false }))
-  app.use(bodyParser.json({ }))
+  // app.use(bodyParser.urlencoded({ extended: false }))
+  // app.use(bodyParser.json({ }))
+
+  const jsonBodyParser = bodyParser.json({ })
 
   // ROUTES
   app.routes = new ExpressPromiseRouter
@@ -59,21 +60,25 @@ module.exports = function (jlinx) {
     res.json(status)
   })
 
-  app.routes.post('/create', async (req, res) => {
-    const {
-      ownerSigningKey,
-      ownerSigningKeyProof
-    } = req.body
-    if (
-      !ownerSigningKey ||
-      !ownerSigningKeyProof
-    ) return res.status(400).end()
-    const id = await jlinx.create({
-      ownerSigningKey: Buffer.from(ownerSigningKey, 'hex'),
-      ownerSigningKeyProof: Buffer.from(ownerSigningKeyProof, 'hex')
-    })
-    res.status(201).json({ id, legnth: 0 })
-  })
+  app.routes.post(
+    '/create',
+    jsonBodyParser,
+    async (req, res) => {
+      const {
+        ownerSigningKey,
+        ownerSigningKeyProof
+      } = req.body
+      if (
+        !ownerSigningKey ||
+        !ownerSigningKeyProof
+      ) return res.status(400).end()
+      const id = await jlinx.create({
+        ownerSigningKey: Buffer.from(ownerSigningKey, 'hex'),
+        ownerSigningKeyProof: Buffer.from(ownerSigningKeyProof, 'hex')
+      })
+      res.status(201).json({ id, legnth: 0 })
+    }
+  )
 
   // getLength (id)
   app.routes.get(/^\/([A-Za-z0-9\-_]{43})$/, async (req, res) => {
@@ -95,13 +100,19 @@ module.exports = function (jlinx) {
   })
 
   // append
-  app.routes.post(/^\/([A-Za-z0-9\-_]{43})$/, async (req, res) => {
-    const id = req.params[0]
-    debug('append', { id })
-    const signature = req.header('jlinx-signature')
-    await jlinx.append(id, req.body, signature)
-    res.end()
-  })
+  app.routes.post(
+    /^\/([A-Za-z0-9\-_]{43})$/,
+    bodyParser.raw(),
+    async (req, res) => {
+      const id = req.params[0]
+      let signature = req.header('jlinx-signature')
+      const block = req.body
+      debug('append', { id, signature, block })
+      if (signature) signature = b4a.from(signature, 'hex')
+      await jlinx.append(id, block, signature)
+      res.status(200).end()
+    }
+  )
 
   // onChange
 

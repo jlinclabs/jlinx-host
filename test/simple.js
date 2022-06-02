@@ -23,8 +23,8 @@ test('simple', async (t, createHost) => {
   t.ok(doc1Id)
 
   t.same(
-    await host.getInfo(doc1Id),
-    undefined
+    await host.getLength(doc1Id),
+    0
   )
 
   t.deepEqual(
@@ -36,12 +36,12 @@ test('simple', async (t, createHost) => {
         ownerKeyPair.secretKey
       )
     ),
-    { id: doc1Id, length: 1 }
+    1
   )
 
   t.same(
-    await host.getInfo(doc1Id),
-    { id: doc1Id, length: 1 }
+    await host.getLength(doc1Id),
+    1
   )
 
   t.ok(
@@ -60,12 +60,12 @@ test('simple', async (t, createHost) => {
         ownerKeyPair.secretKey
       )
     ),
-    { id: doc1Id, length: 2 }
+    2
   )
 
   t.same(
-    await host.getInfo(doc1Id),
-    { id: doc1Id, length: 2 }
+    await host.getLength(doc1Id),
+    2
   )
 
   t.ok(
