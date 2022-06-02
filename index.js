@@ -63,11 +63,11 @@ module.exports = class JlinxHost {
 
   destroy () { return this.node.destroy() }
 
-  async create (opts) {
-    const {
-      ownerSigningKey,
-      ownerSigningKeyProof,
-    } = opts
+  async create ({
+    ownerSigningKey,
+    ownerSigningKeyProof,
+  }) {
+    debug('create', { ownerSigningKey })
     const validProof = verify(
       keyToBuffer(this.publicKey),
       ownerSigningKeyProof,
@@ -88,20 +88,22 @@ module.exports = class JlinxHost {
   }
 
   async getLength (id) {
+    debug('getLength', { id })
     return await this.node.getLength(id)
   }
 
   async getEntry (id, index) {
+    debug('getEntry', { id, index })
     return this.node.getEntry(id, index)
   }
 
   async append(id, block, signature){
+    debug('append', { id, blockLength: block.length })
     const secretKey = await this.hostKeys.get(id)
     const ownerSigningKey = await this.ownerKeys.get(id)
     if (!secretKey || !ownerSigningKey){
       throw new Error(`not hosted here`)
     }
-
     const validSignature = verify(
       block,
       signature,
@@ -110,16 +112,8 @@ module.exports = class JlinxHost {
     if (!validSignature){
       throw new Error('invalid signature')
     }
-    return await this.node.append(id, secretKey, [block])
-    // const doc = await this.node.get(id, secretKey)
-    // if (!doc || !doc.writable){
-    //   throw new Error('unauthorized')
-    // }
-    // await doc.append(block)
-    // return {
-    //   id: doc.id,
-    //   length: doc.length,
-    // }
+    const length = await this.node.append(id, secretKey, [block])
+    return length
   }
 
 }

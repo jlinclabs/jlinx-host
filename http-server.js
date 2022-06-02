@@ -95,7 +95,6 @@ module.exports = function (jlinx) {
     const index = parseInt(req.params[1], 10)
     debug('getEntry', { id, index })
     const entry = await jlinx.getEntry(id, index)
-    debug('getEntry sending', entry)
     res.send(entry)
   })
 
@@ -107,10 +106,10 @@ module.exports = function (jlinx) {
       const id = req.params[0]
       let signature = req.header('jlinx-signature')
       const block = req.body
-      debug('append', { id, signature, block })
+      debug('append', { id, blockLength: block.length })
       if (signature) signature = b4a.from(signature, 'hex')
-      await jlinx.append(id, block, signature)
-      res.status(200).end()
+      const length = await jlinx.append(id, block, signature)
+      res.status(200).json({ length })
     }
   )
 
