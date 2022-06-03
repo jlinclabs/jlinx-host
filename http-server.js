@@ -108,8 +108,18 @@ module.exports = function (jlinx) {
       const block = req.body
       debug('append', { id, blockLength: block.length })
       if (signature) signature = b4a.from(signature, 'hex')
-      const length = await jlinx.append(id, block, signature)
-      res.status(200).json({ length })
+      try{
+        const length = await jlinx.append(id, block, signature)
+        res.status(200).json({ length })
+        debug('append success', { id, length })
+      }catch(error){
+        if (error.message === 'invalid signature'){
+          debug('append: invalid signature')
+          res.statusMessage = error.message
+          return res.status(400).send(error.message)
+        }
+        throw error
+      }
     }
   )
 

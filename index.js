@@ -104,6 +104,11 @@ module.exports = class JlinxHost {
     if (!secretKey || !ownerSigningKey){
       throw new Error(`not hosted here`)
     }
+    debug('append verify signature', {
+      block,
+      signature,
+      ownerSigningKey
+    })
     const validSignature = verify(
       block,
       signature,
