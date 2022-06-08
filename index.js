@@ -121,6 +121,11 @@ module.exports = class JlinxHost {
     return length
   }
 
+  async waitForUpdate (id, length) {
+    debug('waitForUpdate', { id })
+    return this.node.waitForUpdate(id, length)
+  }
+
 }
 
 

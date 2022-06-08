@@ -60,6 +60,7 @@ module.exports = function (jlinx) {
     res.json(status)
   })
 
+  // create
   app.routes.post(
     '/create',
     jsonBodyParser,
@@ -95,6 +96,7 @@ module.exports = function (jlinx) {
     const index = parseInt(req.params[1], 10)
     debug('getEntry', { id, index })
     const entry = await jlinx.getEntry(id, index)
+    res.set("Content-Disposition", `attachment; filename="${id}-${index}"`)
     res.send(entry)
   })
 
@@ -123,6 +125,17 @@ module.exports = function (jlinx) {
     }
   )
 
+  app.routes.get(
+    /^\/([A-Za-z0-9\-_]{43})\/(\d+|-1)\/next$/,
+    async (req, res) => {
+      const id = req.params[0]
+      const index = parseInt(req.params[1], 10)
+      const length = index + 1
+      debug('waitForUpdate', { id, length })
+      const newLength = await jlinx.waitForUpdate(id, length)
+      res.json({ length: newLength })
+    }
+  )
   // onChange
 
   app.routes.get(/^\/([A-Za-z0-9\-_]{43})\/onchange$/, async (req, res) => {
