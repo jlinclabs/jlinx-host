@@ -9,7 +9,6 @@ const { keyToString } = require('jlinx-util')
 
 const debug = Debug('jlinx:http-server')
 
-
 module.exports = function (jlinx) {
 
   const app = express()
@@ -81,22 +80,73 @@ module.exports = function (jlinx) {
     }
   )
 
-  // getLength (id)
+  // getHeader (id)
   app.routes.get(/^\/([A-Za-z0-9\-_]{43})$/, async (req, res) => {
     const id = req.params[0]
-    debug('getLength', { id })
-    const length = await jlinx.getLength(id)
-    res.json({ length })
-    // TODO consider streaming entire core here if accepts
+    debug('getHeader', { id })
+    const doc = await jlinx.get(id)
+    await doc.update()
+    const header = await doc.getHeader()
+    res.json(header)
   })
+
+  // stream id
+  app.routes.get(/^\/([A-Za-z0-9\-_]{43})\/stream$/, async (req, res) => {
+    const id = req.params[0]
+    debug('getHeader', { id })
+    const doc = await jlinx.get(id)
+    let closed = false
+    req.on('close', function () { closed = true })
+    res.set({
+      'Cache-Control': 'no-cache',
+      'Content-Type': 'text/event-stream',
+      'Connection': 'keep-alive'
+    })
+
+    res.flushHeaders()
+    await doc.update()
+    let cursor = 0
+    while (true) {
+      if (closed) break
+      while (cursor < doc.length){
+        if (closed) break
+        let entry = await doc.get(cursor)
+        debug('STREAM', { i: cursor, entry })
+        try{
+          entry = JSON.stringify(JSON.parse(entry), null, 2)
+        }catch(e){}
+        res.write(entry)
+        res.write('\n')
+        cursor++
+      }
+      if (closed) break
+      await doc.waitForUpdate(cursor)
+    }
+  })
+
 
   // getEntry (id, index)
   app.routes.get(/^\/([A-Za-z0-9\-_]{43})\/(\d+)$/, async (req, res) => {
     const id = req.params[0]
     const index = parseInt(req.params[1], 10)
     debug('getEntry', { id, index })
-    const entry = await jlinx.getEntry(id, index)
+    const doc = await jlinx.get(id)
     res.set("Content-Disposition", `attachment; filename="${id}-${index}"`)
+    const header = await doc.get(0)
+    if (header){
+      console.log({ header })
+      try{
+        const { contentType } = JSON.parse(header)
+        if (contentType){
+          res.set('Cache-Control', 'immutable')
+          res.set('Content-Type', contentType)
+          res.set('Content-Disposition', 'inline')
+        }
+      }catch(e){
+        debug('failed to parse doc header', e)
+      }
+    }
+    const entry = await doc.get(index)
     res.send(entry)
   })
 
@@ -111,7 +161,12 @@ module.exports = function (jlinx) {
       debug('append', { id, blockLength: block.length })
       if (signature) signature = b4a.from(signature, 'hex')
       try{
-        const length = await jlinx.append(id, block, signature)
+        const doc = await jlinx.get(id)
+        if (!doc || doc.writeable){
+          throw new Error(`${id} is not not hosted here`)
+        }
+        await doc.append(block, signature)
+        const length = doc.length
         res.status(200).json({ length })
         debug('append success', { id, length })
       }catch(error){
@@ -132,8 +187,10 @@ module.exports = function (jlinx) {
       const index = parseInt(req.params[1], 10)
       const length = index + 1
       debug('waitForUpdate', { id, length })
-      const newLength = await jlinx.waitForUpdate(id, length)
-      res.json({ length: newLength })
+      const doc = await jlinx.get(id)
+      await doc.waitForUpdate(length)
+      debug('waitForUpdate', { id, length, nextLength: doc.length })
+      res.json({ length: doc.length })
     }
   )
   // onChange
