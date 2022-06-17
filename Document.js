@@ -70,7 +70,8 @@ module.exports = class Document {
       header.errorParsingHeader = `${error}`
       // throw new Error(`unable to parse document header`)
     }
-    header.length = this.length
+    header.length = this.core.length
+    debug('getHeader ->', this.id, header)
     return header
   }
 
