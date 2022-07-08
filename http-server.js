@@ -140,18 +140,22 @@ module.exports = function (jlinx) {
     const index = parseInt(req.params[1], 10)
     debug('getEntry', { id, index })
     const doc = await jlinx.get(id)
+    await doc.update()
     res.set("Content-Disposition", `attachment; filename="${id}-${index}"`)
-    const header = await doc.get(0)
-    if (header){
-      try{
-        const { contentType } = JSON.parse(header)
-        if (contentType){
-          res.set('Cache-Control', 'immutable')
-          res.set('Content-Type', contentType)
-          res.set('Content-Disposition', 'inline')
+    res.set('Cache-Control', 'immutable')
+    res.set('Content-Disposition', 'inline')
+
+    if (doc.length > 0){
+      const header = await doc.get(0)
+      if (header){
+        try{
+          const { contentType } = JSON.parse(header)
+          if (contentType){
+            res.set('Content-Type', contentType)
+          }
+        }catch(e){
+          debug('failed to parse doc header', e)
         }
-      }catch(e){
-        debug('failed to parse doc header', e)
       }
     }
     const entry = await doc.get(index)
