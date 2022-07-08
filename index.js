@@ -37,6 +37,7 @@ module.exports = class JlinxHost {
     this.ownerKeys = this.vault.namespace('ownerKeys', 'raw')
 
     this.node = new JlinxNode({
+      topic: opts.topic,
       storagePath: Path.join(opts.storagePath, 'cores'),
       bootstrap: opts.bootstrap,
       keyPair: this.keyPair,

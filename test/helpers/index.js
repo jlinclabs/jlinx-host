@@ -42,12 +42,13 @@ module.exports.test = function(name, fn, _tape = tape) {
       const jlinxHost = new JlinxHost({
         storagePath: await newTmpDir(),
         bootstrap,
-        url: `http://example.com`,
+        url: `http://${Vault.generateKey().toString('hex')}.com`,
         keyPair: createSigningKeyPair(),
         vaultKey: Vault.generateKey()
       })
       jlinxHosts.push(jlinxHost)
       await jlinxHost.ready()
+      console.log('\n\n!!node.swarm.dht', jlinxHost.node.swarm.dht)
       return jlinxHost
     }
     await fn(t, create)
