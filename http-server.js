@@ -95,14 +95,14 @@ module.exports = function (jlinx) {
     debug('getHeader', { id })
     const doc = await jlinx.get(id)
     await doc.update()
-    const header = await doc.getHeader()
-    res.json(header)
+    // const header = await doc.getHeader()
+    res.json({ length: doc.length || 0 })
   })
 
   // stream (id)
   app.routes.get(/^\/([A-Za-z0-9\-_]{43})\/stream$/, async (req, res) => {
     const id = req.params[0]
-    debug('getHeader', { id })
+    debug('stream', { id })
     const doc = await jlinx.get(id)
     let closed = false
     req.on('close', function () { closed = true })

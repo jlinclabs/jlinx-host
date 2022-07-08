@@ -48,7 +48,6 @@ module.exports.test = function(name, fn, _tape = tape) {
       })
       jlinxHosts.push(jlinxHost)
       await jlinxHost.ready()
-      console.log('\n\n!!node.swarm.dht', jlinxHost.node.swarm.dht)
       return jlinxHost
     }
     await fn(t, create)
