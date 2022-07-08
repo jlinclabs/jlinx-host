@@ -97,7 +97,8 @@ module.exports = class Document {
     throw new Error('sub is not supported yet')
   }
 
-  async waitForUpdate (theirLength) {
+  async waitForUpdate (theirLength = this.length) {
+    debug('waitForUpdate', this, { theirLength })
     await this.ready()
     await this.update()
     const ourLength = this.length
@@ -109,7 +110,8 @@ module.exports = class Document {
       )
     }
     if (theirLength < ourLength){
-      return ourLength
+      debug('waitForUpdate', 'already longer')
+      return Promise.resolve(ourLength)
     }
     if (theirLength >= ourLength){
       return new Promise((resolve, reject) => {
@@ -118,6 +120,7 @@ module.exports = class Document {
             theirLength,
             newLength: this.core.length
           })
+          debug('waitForUpdate', 'append!', this.core.length)
           resolve(this.core.length)
         })
       })

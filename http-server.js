@@ -7,7 +7,7 @@ const ExpressPromiseRouter = require('express-promise-router')
 const bodyParser = require('body-parser')
 const { keyToString } = require('jlinx-util')
 
-const debug = Debug('jlinx:http-server')
+const debug = Debug('jlinx:host:http-server')
 
 module.exports = function (jlinx) {
 
@@ -81,11 +81,11 @@ module.exports = function (jlinx) {
         !ownerSigningKey ||
         !ownerSigningKeyProof
       ) return res.status(400).end()
-      const id = await jlinx.create({
+      const doc = await jlinx.create({
         ownerSigningKey: Buffer.from(ownerSigningKey, 'hex'),
         ownerSigningKeyProof: Buffer.from(ownerSigningKeyProof, 'hex')
       })
-      res.status(201).json({ id, legnth: 0 })
+      res.status(201).json({ id: doc.id, length: doc.length })
     }
   )
 
@@ -99,7 +99,7 @@ module.exports = function (jlinx) {
     res.json(header)
   })
 
-  // stream id
+  // stream (id)
   app.routes.get(/^\/([A-Za-z0-9\-_]{43})\/stream$/, async (req, res) => {
     const id = req.params[0]
     debug('getHeader', { id })
