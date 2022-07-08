@@ -52,10 +52,12 @@ module.exports.test = function(name, fn, _tape = tape) {
     }
     await fn(t, create)
 
-    destroy(jlinxHosts)
-    destroy(tmpDirs)
-    destroy(bootstrappers)
-    destroy(nodes)
+    t.teardown(() => {
+      destroy(jlinxHosts)
+      destroy(tmpDirs)
+      destroy(bootstrappers)
+      destroy(nodes)
+    })
   }
 }
 exports.test.only = (name, fn) => exports.test(name, fn, tape.only)
