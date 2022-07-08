@@ -50,6 +50,7 @@ module.exports = class JlinxHost {
     return this.constructor.name + '(\n' +
       indent + '  url: ' + opts.stylize(this.url, 'string') + '\n' +
       indent + '  storagePath: ' + opts.stylize(this.storagePath, 'string') + '\n' +
+      indent + '  peers: ' + opts.stylize(this.node.numberOfPeers, 'number') + '\n' +
       indent + ')'
   }
 
@@ -83,7 +84,9 @@ module.exports = class JlinxHost {
     debug('created', { id })
     await this.hostKeys.set(id, secretKey)
     await this.ownerKeys.set(id, ownerSigningKey)
-    return id
+    const core = await this.node.get(id, secretKey)
+    const doc = Document.open({ id, core, ownerSigningKey })
+    return doc
   }
 
   async get(id){

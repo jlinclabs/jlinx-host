@@ -35,7 +35,10 @@ module.exports = function (jlinx) {
   // app.use(bodyParser.urlencoded({ extended: false }))
   // app.use(bodyParser.json({ }))
 
-  const jsonBodyParser = bodyParser.json({ })
+  const jsonBodyParser = bodyParser.json({
+    // limit: 999999,
+    limit: 102400 * 10,
+  })
 
   // ROUTES
   app.routes = new ExpressPromiseRouter
@@ -43,7 +46,13 @@ module.exports = function (jlinx) {
 
   app.routes.use(async (req, res, next) => {
     debug(req.method, req.url)
-    await app.ready
+    try{
+      await app.ready
+    }catch(error){
+      console.error
+    }
+
+    debug('hypercore status', await jlinx.node.status())
     next()
   })
 
@@ -134,7 +143,6 @@ module.exports = function (jlinx) {
     res.set("Content-Disposition", `attachment; filename="${id}-${index}"`)
     const header = await doc.get(0)
     if (header){
-      console.log({ header })
       try{
         const { contentType } = JSON.parse(header)
         if (contentType){
@@ -153,7 +161,9 @@ module.exports = function (jlinx) {
   // append
   app.routes.post(
     /^\/([A-Za-z0-9\-_]{43})$/,
-    bodyParser.raw(),
+    bodyParser.raw({
+      limit: 102400 * 10,
+    }),
     async (req, res) => {
       const id = req.params[0]
       let signature = req.header('jlinx-signature')
