@@ -134,4 +134,23 @@ test('sync across hosts', async (t, createHost) => {
   t.deepEqual(doc1copyUpdate, [2])
   t.equal(doc1.length, 2)
   t.equal(doc1copy.length, 2)
+  t.ok(
+    b4a.equals(
+      await doc1copy.get(1),
+      b4a.from('here is the copy'),
+    )
+  )
+
+  const host3 = await createHost()
+  await host3.connected()
+
+  const doc1copy2 = await host3.get(doc1.id)
+  await doc1copy2.update()
+  t.equal(doc1copy2.length, 2)
+  t.ok(
+    b4a.equals(
+      await doc1copy2.get(1),
+      b4a.from('here is the copy'),
+    )
+  )
 })
