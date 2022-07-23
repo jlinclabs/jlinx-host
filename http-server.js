@@ -95,6 +95,7 @@ module.exports = function (jlinx) {
     debug('getHeader', { id })
     const doc = await jlinx.get(id)
     await doc.update()
+    debug('getHeader', { doc })
     const header = await doc.getHeader()
     res.json(header)
   })

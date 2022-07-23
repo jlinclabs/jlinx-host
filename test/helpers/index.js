@@ -47,7 +47,7 @@ module.exports.test = function(name, fn, _tape = tape) {
         vaultKey: Vault.generateKey()
       })
       jlinxHosts.push(jlinxHost)
-      await jlinxHost.ready()
+      await jlinxHost.connected()
       return jlinxHost
     }
     await fn(t, create)

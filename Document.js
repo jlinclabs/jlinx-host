@@ -61,8 +61,14 @@ module.exports = class Document {
     if (length === 0) return { length: 0 }
 
     const buffer = await this.core.get(0)
-    const header = {
-      ...JSON.parse(buffer),
+    let header = {}
+    try {
+      header = JSON.parse(buffer)
+    }catch(error){
+      header.errorParsingHeader = `${error.message}`
+    }
+    header = {
+      ...header,
       id: this.id,
       length: this.core.length,
     }
