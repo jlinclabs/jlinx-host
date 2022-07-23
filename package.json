@@ -29,8 +29,8 @@
     "dotenv": "^16.0.1",
     "express": "^4.18.1",
     "express-promise-router": "^4.1.1",
-    "jlinx-node": "github:jlinclabs/jlinx-node#e4b51a6ef54d7eba0efe6325fa5e93f1de5ce0b1",
-    "jlinx-util": "github:jlinclabs/jlinx-util#b9cd3cd0a71352ec4605652d7944111124a589e6",
+    "jlinx-node": "github:jlinclabs/jlinx-node#416272f7ff968aeca5b7f05c464ea15d8bab143b",
+    "jlinx-util": "github:jlinclabs/jlinx-util#907a7345b527a017bd62b3f5c8ad51433225c9d6",
     "jlinx-vault": "github:jlinclabs/jlinx-vault#29776247b9fcedda03678a951e5f7b0dab96d014"
   },
   "devDependencies": {
