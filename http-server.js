@@ -49,7 +49,7 @@ module.exports = function (jlinx) {
     try{
       await app.ready
     }catch(error){
-      console.error
+      console.error(error)
     }
 
     debug('hypercore status', await jlinx.node.status())
@@ -95,8 +95,8 @@ module.exports = function (jlinx) {
     debug('getHeader', { id })
     const doc = await jlinx.get(id)
     await doc.update()
-    // const header = await doc.getHeader()
-    res.json({ length: doc.length || 0 })
+    const header = await doc.getHeader()
+    res.json(header)
   })
 
   // stream (id)
