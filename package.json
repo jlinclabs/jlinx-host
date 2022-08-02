@@ -24,7 +24,8 @@
   },
   "homepage": "https://github.com/jlinclabs/jlinx-host#readme",
   "dependencies": {
-    "b4a": "^1.5.3",
+    "autobase": "^1.0.0-alpha.8",
+    "b4a": "^1.6.0",
     "debug": "^4.3.4",
     "dotenv": "^16.0.1",
     "express": "^4.18.1",
@@ -34,12 +35,12 @@
     "jlinx-vault": "github:jlinclabs/jlinx-vault#29776247b9fcedda03678a951e5f7b0dab96d014"
   },
   "devDependencies": {
-    "@hyperswarm/dht": "^5.0.25",
+    "@hyperswarm/dht": "^6.2.1",
     "assert": "^2.0.0",
-    "node-fetch": "^3.2.5",
-    "nodemon": "^2.0.16",
+    "node-fetch": "^3.2.10",
+    "nodemon": "^2.0.19",
     "standard": "^17.0.0",
-    "supertest": "^6.2.3",
+    "supertest": "^6.2.4",
     "tape": "^5.5.3",
     "tmp-promise": "^3.0.3"
   }
