@@ -1,10 +1,9 @@
 const Debug = require('debug')
-const b4a = require('b4a')
 
 const debug = Debug('jlinx:host:document')
 
 const {
-  verify,
+  verify
 } = require('jlinx-util')
 
 module.exports = class Document {
@@ -55,7 +54,7 @@ module.exports = class Document {
     return entry
   }
 
-  async getHeader (){
+  async getHeader () {
     await this.ready()
     const length = this.core.length
     if (length === 0) return { length: 0 }
@@ -64,19 +63,19 @@ module.exports = class Document {
     let header = {}
     try {
       header = JSON.parse(buffer)
-    }catch(error){
+    } catch (error) {
       header.errorParsingHeader = `${error.message}`
     }
     header = {
       ...header,
       id: this.id,
-      length: this.core.length,
+      length: this.core.length
     }
     debug('getHeader ->', header)
     return header
   }
 
-  async append(block, signature){
+  async append (block, signature) {
     debug('append', this, { blockLength: block.length })
     debug('append verify signature', {
       block,
@@ -88,7 +87,7 @@ module.exports = class Document {
       signature,
       this.ownerSigningKey
     )
-    if (!validSignature){
+    if (!validSignature) {
       throw new Error('append failed: invalid signature')
     }
     await this.core.append([block])
@@ -104,17 +103,17 @@ module.exports = class Document {
     await this.update()
     const ourLength = this.length
     debug('waitForUpdate', this, { theirLength, ourLength })
-    if (theirLength > ourLength){
+    if (theirLength > ourLength) {
       throw Error(
-        `waitForUpdate given invalid length ` +
+        'waitForUpdate given invalid length ' +
         `"${theirLength}" expected <= "${ourLength}"`
       )
     }
-    if (theirLength < ourLength){
+    if (theirLength < ourLength) {
       debug('waitForUpdate', 'already longer')
       return Promise.resolve(ourLength)
     }
-    if (theirLength >= ourLength){
+    if (theirLength >= ourLength) {
       return new Promise((resolve, reject) => {
         this.core.once('append', async () => {
           debug('waitForUpdate APPEND!', this, {
@@ -127,5 +126,4 @@ module.exports = class Document {
       })
     }
   }
-
 }

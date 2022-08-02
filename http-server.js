@@ -1,19 +1,16 @@
 const Debug = require('debug')
 const b4a = require('b4a')
 const http = require('http')
-const Path = require('path')
 const express = require('express')
 const ExpressPromiseRouter = require('express-promise-router')
 const bodyParser = require('body-parser')
-const { keyToString } = require('jlinx-util')
 
 const debug = Debug('jlinx:host:http-server')
 
 module.exports = function (jlinx) {
-
   const app = express()
 
-  app.start = async function start(options = {}){
+  app.start = async function start (options = {}) {
     debug('starting')
 
     debug('connecting to jlinx…')
@@ -27,7 +24,7 @@ module.exports = function (jlinx) {
     console.log(`jlinx http server running ${app.url}`)
   }
 
-  app.destroy = function stop() {
+  app.destroy = function stop () {
     if (app.server) return app.server.close()
   }
 
@@ -37,18 +34,18 @@ module.exports = function (jlinx) {
 
   const jsonBodyParser = bodyParser.json({
     // limit: 999999,
-    limit: 102400 * 10,
+    limit: 102400 * 10
   })
 
   // ROUTES
-  app.routes = new ExpressPromiseRouter
+  app.routes = new ExpressPromiseRouter()
   app.use(app.routes)
 
   app.routes.use(async (req, res, next) => {
     debug(req.method, req.url)
-    try{
+    try {
       await app.ready
-    }catch(error){
+    } catch (error) {
       console.error(error)
     }
 
@@ -59,7 +56,7 @@ module.exports = function (jlinx) {
   app.routes.get('/', async (req, res) => {
     res.json({
       status: 'ok',
-      publicKey: jlinx.publicKey,
+      publicKey: jlinx.publicKey
     })
   })
 
@@ -110,7 +107,7 @@ module.exports = function (jlinx) {
     res.set({
       'Cache-Control': 'no-cache',
       'Content-Type': 'text/event-stream',
-      'Connection': 'keep-alive'
+      Connection: 'keep-alive'
     })
 
     res.flushHeaders()
@@ -118,13 +115,13 @@ module.exports = function (jlinx) {
     let cursor = 0
     while (true) {
       if (closed) break
-      while (cursor < doc.length){
+      while (cursor < doc.length) {
         if (closed) break
         let entry = await doc.get(cursor)
         debug('STREAM', { i: cursor, entry })
-        try{
+        try {
           entry = JSON.stringify(JSON.parse(entry), null, 2)
-        }catch(e){}
+        } catch (e) {}
         res.write(entry)
         res.write('\n')
         cursor++
@@ -134,7 +131,6 @@ module.exports = function (jlinx) {
     }
   })
 
-
   // getEntry (id, index)
   app.routes.get(/^\/([A-Za-z0-9\-_]{43})\/(\d+)$/, async (req, res) => {
     const id = req.params[0]
@@ -142,19 +138,19 @@ module.exports = function (jlinx) {
     debug('getEntry', { id, index })
     const doc = await jlinx.get(id)
     await doc.update()
-    res.set("Content-Disposition", `attachment; filename="${id}-${index}"`)
+    res.set('Content-Disposition', `attachment; filename="${id}-${index}"`)
     res.set('Cache-Control', 'immutable')
     res.set('Content-Disposition', 'inline')
 
-    if (doc.length > 0){
+    if (doc.length > 0) {
       const header = await doc.get(0)
-      if (header){
-        try{
+      if (header) {
+        try {
           const { contentType } = JSON.parse(header)
-          if (contentType){
+          if (contentType) {
             res.set('Content-Type', contentType)
           }
-        }catch(e){
+        } catch (e) {
           debug('failed to parse doc header', e)
         }
       }
@@ -167,7 +163,7 @@ module.exports = function (jlinx) {
   app.routes.post(
     /^\/([A-Za-z0-9\-_]{43})$/,
     bodyParser.raw({
-      limit: 102400 * 10,
+      limit: 102400 * 10
     }),
     async (req, res) => {
       const id = req.params[0]
@@ -175,17 +171,17 @@ module.exports = function (jlinx) {
       const block = req.body
       debug('append', { id, blockLength: block.length })
       if (signature) signature = b4a.from(signature, 'hex')
-      try{
+      try {
         const doc = await jlinx.get(id)
-        if (!doc || doc.writeable){
+        if (!doc || doc.writeable) {
           throw new Error(`${id} is not not hosted here`)
         }
         await doc.append(block, signature)
         const length = doc.length
         res.status(200).json({ length })
         debug('append success', { id, length })
-      }catch(error){
-        if (error.message === 'invalid signature'){
+      } catch (error) {
+        if (error.message === 'invalid signature') {
           debug('append: invalid signature')
           res.statusMessage = error.message
           return res.status(400).send(error.message)
@@ -214,12 +210,11 @@ module.exports = function (jlinx) {
     res.json({ TBD: true })
   })
 
-
   app.routes.use(async (error, req, res, next) => {
     debug('ERROR', error)
     res.status(500).json({
       error: `${error}`,
-      stack: error.stack.split('\n'),
+      stack: error.stack.split('\n')
     })
   })
 

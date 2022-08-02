@@ -20,7 +20,7 @@ test('simple', async (t, createHost) => {
   )
   const doc = await host.create({
     ownerSigningKey,
-    ownerSigningKeyProof,
+    ownerSigningKeyProof
   })
   t.ok(doc)
   t.equal(doc.length, 0)
@@ -32,7 +32,7 @@ test('simple', async (t, createHost) => {
       b4a.from('one'),
       ownerKeyPair.secretKey
     )
-  ),
+  )
   t.equal(doc.length, 1)
 
   t.ok(
@@ -64,9 +64,7 @@ test('simple', async (t, createHost) => {
       b4a.from('two')
     )
   )
-
 })
-
 
 test('sync across hosts', async (t, createHost) => {
   const host1 = await createHost()
@@ -74,7 +72,7 @@ test('sync across hosts', async (t, createHost) => {
 
   await Promise.all([
     host1.connected(),
-    host2.connected(),
+    host2.connected()
   ])
 
   const ownerKeyPair = createSigningKeyPair()
@@ -85,7 +83,7 @@ test('sync across hosts', async (t, createHost) => {
   )
   const doc1 = await host1.create({
     ownerSigningKey,
-    ownerSigningKeyProof,
+    ownerSigningKeyProof
   })
 
   t.notEqual(doc1.id, keyToString(ownerKeyPair.publicKey))
@@ -110,7 +108,7 @@ test('sync across hosts', async (t, createHost) => {
   t.ok(
     b4a.equals(
       await doc1copy.get(0),
-      b4a.from('hey steve, wanna sign a contract?'),
+      b4a.from('hey steve, wanna sign a contract?')
     )
   )
 
@@ -128,7 +126,7 @@ test('sync across hosts', async (t, createHost) => {
           ownerKeyPair.secretKey
         )
       )
-    })(),
+    })()
   ])
 
   t.deepEqual(doc1copyUpdate, [2])
@@ -137,7 +135,7 @@ test('sync across hosts', async (t, createHost) => {
   t.ok(
     b4a.equals(
       await doc1copy.get(1),
-      b4a.from('here is the copy'),
+      b4a.from('here is the copy')
     )
   )
 
@@ -150,7 +148,7 @@ test('sync across hosts', async (t, createHost) => {
   t.ok(
     b4a.equals(
       await doc1copy2.get(1),
-      b4a.from('here is the copy'),
+      b4a.from('here is the copy')
     )
   )
 })

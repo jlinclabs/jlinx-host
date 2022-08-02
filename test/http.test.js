@@ -9,7 +9,6 @@ const request = require('supertest')
 const createHttpServer = require('../http-server')
 const { test } = require('./helpers/index.js')
 
-
 test('http', async (t, createHost) => {
   const host = await createHost()
   const app = createHttpServer(host)
@@ -31,6 +30,9 @@ test('http', async (t, createHost) => {
       t.equal(publicKey.length, 43)
       hostPublicKey = publicKey
     })
+
+  console.log('???', { hostPublicKey, host })
+  t.same(host.keyPair.publicKey, hostPublicKey)
 
   await request(app)
     .post('/create')

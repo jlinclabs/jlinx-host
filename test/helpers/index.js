@@ -7,7 +7,7 @@ const { createSigningKeyPair } = require('jlinx-util')
 
 const JlinxHost = require('../../index.js')
 
-module.exports.test = function(name, fn, _tape = tape) {
+module.exports.test = function (name, fn, _tape = tape) {
   return _tape(name, run)
   async function run (t) {
     const bootstrappers = []

@@ -9,7 +9,7 @@ require('dotenv').config({
 console.log({
   JLINX_STORAGE: process.env.JLINX_STORAGE,
   URL: process.env.URL,
-  PORT: process.env.PORT,
+  PORT: process.env.PORT
 })
 
 const JlinxHost = require('../')
@@ -20,9 +20,9 @@ const jlinx = new JlinxHost({
   storagePath: process.env.JLINX_STORAGE,
   keyPair: {
     publicKey: b4a.from(process.env.JLINX_PUBLIC_KEY, 'hex'),
-    secretKey: b4a.from(process.env.JLINX_SECRET_KEY, 'hex'),
+    secretKey: b4a.from(process.env.JLINX_SECRET_KEY, 'hex')
   },
-  vaultKey: b4a.from(process.env.JLINX_VAULT_KEY, 'hex'),
+  vaultKey: b4a.from(process.env.JLINX_VAULT_KEY, 'hex')
 })
 
 const httpServer = createHttpServer(jlinx)

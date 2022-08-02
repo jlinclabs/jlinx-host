@@ -6,7 +6,7 @@ const {
   keyToString,
   verify,
   createSigningKeyPair,
-  validateSigningKeyPair,
+  validateSigningKeyPair
 } = require('jlinx-util')
 const Vault = require('jlinx-vault')
 const Document = require('./Document')
@@ -14,16 +14,16 @@ const Document = require('./Document')
 const debug = Debug('jlinx:host')
 
 module.exports = class JlinxHost {
-  constructor(opts){
-    if (!opts.url){
+  constructor (opts) {
+    if (!opts.url) {
       throw new Error('url is required')
     }
     this.url = opts.url
-    if (!opts.storagePath){
+    if (!opts.storagePath) {
       throw new Error('storagePath is required')
     }
     this.storagePath = opts.storagePath
-    if (!opts.keyPair || !validateSigningKeyPair(opts.keyPair)){
+    if (!opts.keyPair || !validateSigningKeyPair(opts.keyPair)) {
       throw new Error('invalid jlinx host signing key pair')
     }
     this.keyPair = opts.keyPair
@@ -31,7 +31,7 @@ module.exports = class JlinxHost {
 
     this.vault = new Vault({
       path: Path.join(this.storagePath, 'vault'),
-      key: opts.vaultKey,
+      key: opts.vaultKey
     })
     this.hostKeys = this.vault.namespace('hostKeys', 'raw')
     this.ownerKeys = this.vault.namespace('ownerKeys', 'raw')
@@ -40,7 +40,7 @@ module.exports = class JlinxHost {
       topic: opts.topic,
       storagePath: Path.join(opts.storagePath, 'cores'),
       bootstrap: opts.bootstrap,
-      keyPair: this.keyPair,
+      keyPair: this.keyPair
     })
     this._ready = this._open()
   }
@@ -68,7 +68,7 @@ module.exports = class JlinxHost {
 
   async create ({
     ownerSigningKey,
-    ownerSigningKeyProof,
+    ownerSigningKeyProof
   }) {
     debug('create', { ownerSigningKey })
     const validProof = verify(
@@ -76,9 +76,9 @@ module.exports = class JlinxHost {
       ownerSigningKeyProof,
       ownerSigningKey
     )
-    if (!validProof){
+    if (!validProof) {
       debug('invalid proof')
-      throw new Error(`invalid ownerSigningKeyProof`)
+      throw new Error('invalid ownerSigningKeyProof')
     }
     const { publicKey, secretKey } = createSigningKeyPair()
     const id = keyToString(publicKey)
@@ -90,12 +90,11 @@ module.exports = class JlinxHost {
     return doc
   }
 
-  async get(id){
+  async get (id) {
     const secretKey = await this.hostKeys.get(id)
     const core = await this.node.get(id, secretKey)
     const ownerSigningKey = await this.ownerKeys.get(id)
     const doc = Document.open({ id, core, ownerSigningKey })
     return doc
   }
-
 }
