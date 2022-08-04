@@ -7,7 +7,27 @@ const {
 } = require('jlinx-util')
 const { test } = require('./helpers/index.js')
 
+test('peer discovery', async (t, createHost) => {
+  const [host1, host2] = await Promise.all([
+    createHost(),
+    createHost(),
+  ])
+  console.log({ host1, host2 })
+  t.ok(host1)
+  t.ok(host2)
+  await Promise.all([
+    host1.connected(),
+    host2.connected(),
+  ])
+  console.log({
+    host1: host1.peers,
+    host2: host2.peers,
+  })
+})
+
+
 test('simple', async (t, createHost) => {
+  await createHost() // some other host
   const host = await createHost()
   t.ok(host)
   await host.connected()
