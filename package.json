@@ -36,7 +36,6 @@
   },
   "devDependencies": {
     "@hyperswarm/testnet": "^3.0.0",
-    "assert": "^2.0.0",
     "brittle": "^2.3.1",
     "node-fetch": "^3.2.10",
     "nodemon": "^2.0.19",
