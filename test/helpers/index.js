@@ -43,14 +43,17 @@ async function createTestnet (t, size = 3) {
   testnet.createJlinxHosts = async (size = 2) => {
     const hosts = []
     while (hosts.length < size) {
+      const port = await getPort()
+      const url = `http://localhost:${port}`
       const host = new JlinxHost({
         topic: Buffer.from('_testing_jlinx_host_on_hypercore'),
         storagePath: await testnet.newTmpDir(),
         bootstrap: testnet.bootstrap,
-        url: `http://${Vault.generateKey().toString('hex')}.com`,
+        url,
         keyPair: createSigningKeyPair(),
         vaultKey: Vault.generateKey()
       })
+      host.port = port
       t.teardown(() => { host.destroy() })
       hosts.push(host)
       testnet.hosts.set(host.node.id, host)
@@ -77,6 +80,9 @@ async function createTestnet (t, size = 3) {
     t.teardown(() => {
       apps.forEach(app => app.destroy())
     })
+    await Promise.all(
+      apps.map(app => app.start(app.jlinx.port))
+    )
     return apps
   }
 
@@ -91,3 +97,7 @@ async function coreValues (core) {
   return values
 }
 
+let getPort = async (...args) => {
+  getPort = (await import('get-port')).default
+  return getPort(...args)
+}

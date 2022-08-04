@@ -11,10 +11,10 @@ const {
 
 test('http', async (t, createHost) => {
   const { createHttpServers } = await createTestnet(t)
-  const [app] = await createHttpServers(2)
+  const [app1, app2] = await createHttpServers(2)
 
   let hostPublicKey
-  await request(app)
+  await request(app1.url)
     .get('/')
     .expect('Content-Type', /json/)
     .expect(200)
@@ -28,10 +28,10 @@ test('http', async (t, createHost) => {
 
   t.alike(
     hostPublicKey,
-    keyToString(app.jlinx.keyPair.publicKey)
+    keyToString(app1.jlinx.keyPair.publicKey)
   )
 
-  await request(app)
+  await request(app1.url)
     .post('/create')
     .expect(400)
 
@@ -42,7 +42,7 @@ test('http', async (t, createHost) => {
     ownerKeyPair.secretKey
   )
 
-  const id1 = await request(app)
+  const id1 = await request(app1.url)
     .post('/create')
     .send({
       ownerSigningKey: ownerSigningKey.toString('hex'),
@@ -55,7 +55,7 @@ test('http', async (t, createHost) => {
       return id
     })
 
-  await request(app)
+  await request(app1.url)
     .get(`/${id1}`)
     .expect('Content-Type', /json/)
     .expect(200)
@@ -67,7 +67,7 @@ test('http', async (t, createHost) => {
     JSON.stringify({ block: 1 })
   )
 
-  await request(app)
+  await request(app1.url)
     .post(`/${id1}`)
     .set('Content-Type', 'application/octet-stream')
     .set('Content-Length', block1.length)
@@ -78,7 +78,7 @@ test('http', async (t, createHost) => {
     .send(block1)
     .expect(200)
 
-  await request(app)
+  await request(app1.url)
     .get(`/${id1}`)
     .expect('Content-Type', /json/)
     .expect(200)
@@ -86,7 +86,7 @@ test('http', async (t, createHost) => {
       t.alike(res.body.length, 1)
     })
 
-  await request(app)
+  await request(app1.url)
     .get(`/${id1}/0`)
     .expect('Content-Type', 'application/octet-stream')
     .expect('Content-Length', `${block1.length}`)
@@ -95,5 +95,52 @@ test('http', async (t, createHost) => {
       t.alike(res.body, block1)
     })
 
-  t.ok('DONE')
+  await request(app2.url)
+    .get(`/${id1}/0`)
+    .expect('Content-Type', 'application/octet-stream')
+    .expect('Content-Length', `${block1.length}`)
+    .expect(200)
+    .then(res => {
+      t.alike(res.body, block1)
+    })
+
+  const block2 = b4a.from(
+    JSON.stringify({ block: 2 })
+  )
+
+  const gotNextUpdate = t.test('gotNextUpdate')
+  gotNextUpdate.plan(1)
+
+  const nextRequestPromise = request(app2.url)
+    .get(`/${id1}/0/next`)
+    .expect('Content-Type', 'application/json; charset=utf-8')
+    .expect(200)
+    .then(res => {
+      t.alike(res.body, { length: 2 })
+      gotNextUpdate.pass(JSON.stringify(res.body))
+    })
+
+  await request(app1.url)
+    .post(`/${id1}`)
+    .set('Content-Type', 'application/octet-stream')
+    .set('Content-Length', block2.length)
+    .set(
+      'jlinx-signature',
+      sign(block2, ownerKeyPair.secretKey).toString('hex')
+    )
+    .send(block2)
+    .expect(200)
+    .then(() => {})
+
+  await gotNextUpdate
+  await nextRequestPromise
+
+  await request(app2.url)
+    .get(`/${id1}/1`)
+    .expect('Content-Type', 'application/octet-stream')
+    .expect('Content-Length', `${block2.length}`)
+    .expect(200)
+    .then(res => {
+      t.alike(res.body, block2)
+    })
 })
