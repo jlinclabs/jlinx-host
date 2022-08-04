@@ -1,18 +1,16 @@
 const {
   test,
   createTestnet,
-  timeout,
-  JlinxNode,
   b4a,
   keyToBuffer,
   keyToString,
   createSigningKeyPair,
-  sign,
+  sign
 } = require('./helpers/index.js')
 
-test('simple', async (t, createHost) => {
+test('simple', async (t) => {
   const { createJlinxHosts } = await createTestnet(t)
-  const [host, otherHost] = await createJlinxHosts(2)
+  const [host] = await createJlinxHosts(2)
 
   const ownerKeyPair = createSigningKeyPair()
   const ownerSigningKey = ownerKeyPair.publicKey
@@ -100,6 +98,7 @@ test('sync across hosts', async (t, createHost) => {
   t.alike(doc1copy.length, 0)
   t.ok(!doc1copy.writable)
   await doc1copy.update()
+  await doc1copy.get(0) // HACK FIX :(
 
   t.alike(doc1copy.length, 1)
   t.ok(
@@ -141,6 +140,7 @@ test('sync across hosts', async (t, createHost) => {
 
   const doc1copy2 = await host3.get(doc1.id)
   await doc1copy2.update()
+  await doc1copy2.get(0) // HACK FIX :(
   t.alike(doc1copy2.length, 2)
   t.ok(
     b4a.equals(

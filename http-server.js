@@ -10,6 +10,8 @@ const debug = Debug('jlinx:host:http-server')
 module.exports = function (jlinx) {
   const app = express()
 
+  app.jlinx = jlinx
+
   app.start = async function start (options = {}) {
     debug('starting')
 
@@ -91,8 +93,9 @@ module.exports = function (jlinx) {
     const id = req.params[0]
     debug('getHeader', { id })
     const doc = await jlinx.get(id)
+    debug('getHeader updating', { doc })
     await doc.update()
-    debug('getHeader', { doc })
+    debug('getHeader updated', { doc })
     const header = await doc.getHeader()
     res.json(header)
   })

@@ -1,21 +1,17 @@
-const b4a = require('b4a')
-const {
-  keyToBuffer,
-  sign,
-  createSigningKeyPair
-} = require('jlinx-util')
 const request = require('supertest')
-
-const createHttpServer = require('../http-server')
-const { test } = require('./helpers/index.js')
+const {
+  test,
+  createTestnet,
+  b4a,
+  keyToBuffer,
+  keyToString,
+  createSigningKeyPair,
+  sign
+} = require('./helpers/index.js')
 
 test('http', async (t, createHost) => {
-  const host = await createHost()
-  const app = createHttpServer(host)
-  t.teardown(() => {
-    app.destroy()
-    host.destroy()
-  })
+  const { createHttpServers } = await createTestnet(t)
+  const [app] = await createHttpServers(2)
 
   let hostPublicKey
   await request(app)
@@ -23,16 +19,17 @@ test('http', async (t, createHost) => {
     .expect('Content-Type', /json/)
     .expect(200)
     .then(res => {
-      console.log(res.body)
       const { status, publicKey } = res.body
-      t.equal(status, 'ok')
-      t.equal(typeof publicKey, 'string')
-      t.equal(publicKey.length, 43)
+      t.is(status, 'ok')
+      t.is(typeof publicKey, 'string')
+      t.is(publicKey.length, 43)
       hostPublicKey = publicKey
     })
 
-  console.log('???', { hostPublicKey, host })
-  t.same(host.keyPair.publicKey, hostPublicKey)
+  t.alike(
+    hostPublicKey,
+    keyToString(app.jlinx.keyPair.publicKey)
+  )
 
   await request(app)
     .post('/create')
@@ -41,7 +38,7 @@ test('http', async (t, createHost) => {
   const ownerKeyPair = createSigningKeyPair()
   const ownerSigningKey = ownerKeyPair.publicKey
   const ownerSigningKeyProof = sign(
-    keyToBuffer(host.publicKey),
+    keyToBuffer(hostPublicKey),
     ownerKeyPair.secretKey
   )
 
@@ -63,7 +60,7 @@ test('http', async (t, createHost) => {
     .expect('Content-Type', /json/)
     .expect(200)
     .then(res => {
-      t.same(res.body.length, 0)
+      t.alike(res.body.length, 0)
     })
 
   const block1 = b4a.from(
@@ -86,7 +83,7 @@ test('http', async (t, createHost) => {
     .expect('Content-Type', /json/)
     .expect(200)
     .then(res => {
-      t.same(res.body.length, 1)
+      t.alike(res.body.length, 1)
     })
 
   await request(app)
@@ -95,6 +92,8 @@ test('http', async (t, createHost) => {
     .expect('Content-Length', `${block1.length}`)
     .expect(200)
     .then(res => {
-      t.same(res.body, block1)
+      t.alike(res.body, block1)
     })
+
+  t.ok('DONE')
 })

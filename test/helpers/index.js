@@ -1,9 +1,6 @@
 const test = require('brittle')
 const { timeout } = require('nonsynchronous')
 const _createTestnet = require('@hyperswarm/testnet')
-const Hyperswarm = require('hyperswarm')
-const Corestore = require('corestore')
-const ram = require('random-access-memory')
 const tmp = require('tmp-promise')
 const b4a = require('b4a')
 const fs = require('node:fs/promises')
@@ -11,11 +8,12 @@ const {
   keyToString,
   keyToBuffer,
   createSigningKeyPair,
-  sign,
+  sign
 } = require('jlinx-util')
 const Vault = require('jlinx-vault')
 
 const JlinxHost = require('../..')
+const createHttpServer = require('../../http-server')
 
 Object.assign(exports, {
   test,
@@ -27,10 +25,10 @@ Object.assign(exports, {
   sign,
   createTestnet,
   coreValues,
-  JlinxHost,
+  JlinxHost
 })
 
-async function createTestnet(t, size = 3){
+async function createTestnet (t, size = 3) {
   const testnet = await _createTestnet(size, t.teardown)
 
   const newTmpDir = async () => {
@@ -41,10 +39,10 @@ async function createTestnet(t, size = 3){
     return path
   }
 
-  testnet.hosts = new Map
+  testnet.hosts = new Map()
   testnet.createJlinxHosts = async (size = 2) => {
     const hosts = []
-    while(hosts.length < size){
+    while (hosts.length < size) {
       const host = new JlinxHost({
         topic: Buffer.from('_testing_jlinx_host_on_hypercore'),
         storagePath: await newTmpDir(),
@@ -60,30 +58,38 @@ async function createTestnet(t, size = 3){
     await Promise.all(
       hosts.map(host => host.connected())
     )
-    const ids = testnet.hosts.keys()
-    for (const host of hosts){
-      for (const otherhost of testnet.hosts.values()){
-        if (host === otherhost) continue
-        t.ok(host.node.swarm.peers.has(otherhost.node.id), `host has peer`)
+    for (const host of hosts) {
+      for (const id of testnet.hosts.keys()) {
+        if (host.node.id !== id) {
+          t.ok(
+            host.node.swarm.peers.has(id),
+            `host ${host.node.id} should have peer ${id}`
+          )
+        }
       }
     }
-    for (const host of hosts){
-      await host.ready()
-    }
     return hosts
+  }
+
+  testnet.createHttpServers = async (size = 3) => {
+    const hosts = await testnet.createJlinxHosts(size)
+    const apps = hosts.map(createHttpServer)
+    t.teardown(() => {
+      apps.forEach(app => app.destroy())
+    })
+    return apps
   }
 
   return testnet
 }
 
-async function coreValues(core){
+async function coreValues (core) {
   const values = []
-  for (let n = 0; n < core.length; n++){
+  for (let n = 0; n < core.length; n++) {
     values[n] = (await core.get(n)).toString()
   }
   return values
 }
-
 
 // const tape = require('tape')
 // const tmp = require('tmp-promise')

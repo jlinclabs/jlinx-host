@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "lint": "standard",
-    "tape": "tape $(find test | grep \\.test\\.js$)",
-    "test": "npm run lint && npm run tape",
+    "brittle": "brittle $(find test | grep \\.test\\.js$)",
+    "test": "npm run lint && npm run brittle",
     "start": "./scripts/start.js",
     "dev:start": "nodemon -w . --exec ./scripts/start.js"
   },
@@ -25,7 +25,6 @@
   },
   "homepage": "https://github.com/jlinclabs/jlinx-host#readme",
   "dependencies": {
-    "autobase": "^1.0.0-alpha.8",
     "b4a": "^1.6.0",
     "debug": "^4.3.4",
     "dotenv": "^16.0.1",
@@ -37,14 +36,14 @@
   },
   "devDependencies": {
     "@hyperswarm/testnet": "^3.0.0",
-    "nonsynchronous": "^1.2.0",
-    "random-access-memory": "^5.0.0",
     "assert": "^2.0.0",
+    "brittle": "^2.3.1",
     "node-fetch": "^3.2.10",
     "nodemon": "^2.0.19",
+    "nonsynchronous": "^1.2.0",
+    "random-access-memory": "^5.0.0",
     "standard": "^17.0.0",
     "supertest": "^6.2.4",
-    "brittle": "^2.3.1",
     "tmp-promise": "^3.0.3"
   }
 }

@@ -38,13 +38,13 @@ module.exports = class Document {
   ready () { return this._opening }
 
   async _open () {
+    debug('opening (core.ready)', this)
     await this.core.ready()
     debug('open', this)
   }
 
   async update () {
     await this.core.update()
-    await this.core.get(0) // sometimes update… doesnt :/
   }
 
   async get (index) {
@@ -56,6 +56,7 @@ module.exports = class Document {
   }
 
   async getHeader () {
+    debug('getHeader', this)
     await this.ready()
     const length = this.core.length
     if (length === 0) return { length: 0 }
