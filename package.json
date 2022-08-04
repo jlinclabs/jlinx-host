@@ -31,18 +31,20 @@
     "dotenv": "^16.0.1",
     "express": "^4.18.1",
     "express-promise-router": "^4.1.1",
-    "jlinx-node": "github:jlinclabs/jlinx-node#d400bf65dd8e9bfcc7d9a392f94c4690094bf623",
+    "jlinx-node": "github:jlinclabs/jlinx-node#13dbd31c9d77e624ba6b9eb59c3172dcb400f22b",
     "jlinx-util": "github:jlinclabs/jlinx-util#907a7345b527a017bd62b3f5c8ad51433225c9d6",
     "jlinx-vault": "github:jlinclabs/jlinx-vault#29776247b9fcedda03678a951e5f7b0dab96d014"
   },
   "devDependencies": {
-    "@hyperswarm/dht": "^6.2.1",
+    "@hyperswarm/testnet": "^3.0.0",
+    "nonsynchronous": "^1.2.0",
+    "random-access-memory": "^5.0.0",
     "assert": "^2.0.0",
     "node-fetch": "^3.2.10",
     "nodemon": "^2.0.19",
     "standard": "^17.0.0",
     "supertest": "^6.2.4",
-    "tape": "^5.5.3",
+    "brittle": "^2.3.1",
     "tmp-promise": "^3.0.3"
   }
 }
