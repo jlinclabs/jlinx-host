@@ -1,36 +1,18 @@
-const b4a = require('b4a')
 const {
+  test,
+  createTestnet,
+  timeout,
+  JlinxNode,
+  b4a,
   keyToBuffer,
   keyToString,
+  createSigningKeyPair,
   sign,
-  createSigningKeyPair
-} = require('jlinx-util')
-const { test } = require('./helpers/index.js')
-
-test('peer discovery', async (t, createHost) => {
-  const [host1, host2] = await Promise.all([
-    createHost(),
-    createHost(),
-  ])
-  console.log({ host1, host2 })
-  t.ok(host1)
-  t.ok(host2)
-  await Promise.all([
-    host1.connected(),
-    host2.connected(),
-  ])
-  console.log({
-    host1: host1.peers,
-    host2: host2.peers,
-  })
-})
-
+} = require('./helpers/index.js')
 
 test('simple', async (t, createHost) => {
-  await createHost() // some other host
-  const host = await createHost()
-  t.ok(host)
-  await host.connected()
+  const { createJlinxHosts } = await createTestnet(t)
+  const [host, otherHost] = await createJlinxHosts(2)
 
   const ownerKeyPair = createSigningKeyPair()
   const ownerSigningKey = ownerKeyPair.publicKey
@@ -43,7 +25,7 @@ test('simple', async (t, createHost) => {
     ownerSigningKeyProof
   })
   t.ok(doc)
-  t.equal(doc.length, 0)
+  t.alike(doc.length, 0)
   t.ok(doc.writable)
 
   await doc.append(
@@ -53,7 +35,7 @@ test('simple', async (t, createHost) => {
       ownerKeyPair.secretKey
     )
   )
-  t.equal(doc.length, 1)
+  t.alike(doc.length, 1)
 
   t.ok(
     b4a.equals(
@@ -69,7 +51,7 @@ test('simple', async (t, createHost) => {
       ownerKeyPair.secretKey
     )
   )
-  t.equal(doc.length, 2)
+  t.alike(doc.length, 2)
 
   t.ok(
     b4a.equals(
@@ -87,13 +69,8 @@ test('simple', async (t, createHost) => {
 })
 
 test('sync across hosts', async (t, createHost) => {
-  const host1 = await createHost()
-  const host2 = await createHost()
-
-  await Promise.all([
-    host1.connected(),
-    host2.connected()
-  ])
+  const { createJlinxHosts } = await createTestnet(t)
+  const [host1, host2] = await createJlinxHosts(2)
 
   const ownerKeyPair = createSigningKeyPair()
   const ownerSigningKey = ownerKeyPair.publicKey
@@ -106,8 +83,8 @@ test('sync across hosts', async (t, createHost) => {
     ownerSigningKeyProof
   })
 
-  t.notEqual(doc1.id, keyToString(ownerKeyPair.publicKey))
-  t.equal(doc1.length, 0)
+  t.not(doc1.id, keyToString(ownerKeyPair.publicKey))
+  t.alike(doc1.length, 0)
   t.ok(doc1.writable)
 
   await doc1.append(
@@ -119,12 +96,12 @@ test('sync across hosts', async (t, createHost) => {
   )
 
   const doc1copy = await host2.get(doc1.id)
-  t.equal(doc1copy.id, doc1.id)
-  t.equal(doc1copy.length, 0)
+  t.alike(doc1copy.id, doc1.id)
+  t.alike(doc1copy.length, 0)
   t.ok(!doc1copy.writable)
   await doc1copy.update()
 
-  t.equal(doc1copy.length, 1)
+  t.alike(doc1copy.length, 1)
   t.ok(
     b4a.equals(
       await doc1copy.get(0),
@@ -149,9 +126,9 @@ test('sync across hosts', async (t, createHost) => {
     })()
   ])
 
-  t.deepEqual(doc1copyUpdate, [2])
-  t.equal(doc1.length, 2)
-  t.equal(doc1copy.length, 2)
+  t.alike(doc1copyUpdate, [2])
+  t.alike(doc1.length, 2)
+  t.alike(doc1copy.length, 2)
   t.ok(
     b4a.equals(
       await doc1copy.get(1),
@@ -159,12 +136,12 @@ test('sync across hosts', async (t, createHost) => {
     )
   )
 
-  const host3 = await createHost()
+  const [host3] = await createJlinxHosts(1)
   await host3.connected()
 
   const doc1copy2 = await host3.get(doc1.id)
   await doc1copy2.update()
-  t.equal(doc1copy2.length, 2)
+  t.alike(doc1copy2.length, 2)
   t.ok(
     b4a.equals(
       await doc1copy2.get(1),

@@ -44,6 +44,7 @@ module.exports = class Document {
 
   async update () {
     await this.core.update()
+    await this.core.get(0) // sometimes update… doesnt :/
   }
 
   async get (index) {
