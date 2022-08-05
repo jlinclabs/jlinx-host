@@ -4,6 +4,7 @@ const http = require('http')
 const express = require('express')
 const ExpressPromiseRouter = require('express-promise-router')
 const bodyParser = require('body-parser')
+const multibase = require('jlinx-util/multibase')
 
 const debug = Debug('jlinx:host:http-server')
 
@@ -17,7 +18,7 @@ module.exports = function (jlinx) {
 
     debug('connecting to jlinx…')
     app.ready = jlinx.connected().then(async () => {
-      console.log(`jlinx agent public key: ${jlinx.publicKey}`)
+      console.log(`jlinx agent public key: ${multibase.encode(jlinx.publicKey)}`)
     })
 
     app.server = http.createServer(app).listen(options.port)
@@ -48,9 +49,9 @@ module.exports = function (jlinx) {
     const id = idSeq++
     debug('REQ open', id, req.method, req.url)
     res.on('close', () => {
-      debug('REQ close ', id, {
+      debug('REQ close', id, {
         statusCode: res.statusCode,
-        header: res.header()
+        headers: res._headers
       })
     })
 
@@ -67,7 +68,7 @@ module.exports = function (jlinx) {
   app.routes.get('/', async (req, res) => {
     res.json({
       status: 'ok',
-      publicKey: jlinx.publicKey
+      publicKey: multibase.encode(jlinx.publicKey)
     })
   })
 
@@ -98,7 +99,8 @@ module.exports = function (jlinx) {
   )
 
   // getHeader (id)
-  app.routes.get(/^\/([A-Za-z0-9\-_]{43})$/, async (req, res) => {
+  // app.routes.get(/^\/([A-Za-z0-9\-_]{43})$/, async (req, res) => {
+  app.routes.get(/^\/(jlinx:[^\/]+)$/, async (req, res) => {
     const id = req.params[0]
     debug('getHeader', { id })
     const doc = await jlinx.get(id)
@@ -110,7 +112,8 @@ module.exports = function (jlinx) {
   })
 
   // stream (id)
-  app.routes.get(/^\/([A-Za-z0-9\-_]{43})\/stream$/, async (req, res) => {
+  // app.routes.get(/^\/([A-Za-z0-9\-_]{43})\/stream$/, async (req, res) => {
+  app.routes.get(/^\/(jlinx:[^\/]+)\/stream$/, async (req, res) => {
     const id = req.params[0]
     debug('stream', { id })
     const doc = await jlinx.get(id)
@@ -144,7 +147,7 @@ module.exports = function (jlinx) {
   })
 
   // getEntry (id, index)
-  app.routes.get(/^\/([A-Za-z0-9\-_]{43})\/(\d+)$/, async (req, res) => {
+  app.routes.get(/^\/(jlinx:[^\/]+)\/(\d+)$/, async (req, res) => {
     const id = req.params[0]
     const index = parseInt(req.params[1], 10)
     debug('getEntry', { id, index })
@@ -173,7 +176,7 @@ module.exports = function (jlinx) {
 
   // append
   app.routes.post(
-    /^\/([A-Za-z0-9\-_]{43})$/,
+    /^\/(jlinx:[^\/]+)$/,
     bodyParser.raw({
       limit: 102400 * 10
     }),
@@ -204,7 +207,7 @@ module.exports = function (jlinx) {
   )
 
   app.routes.get(
-    /^\/([A-Za-z0-9\-_]{43})\/(\d+|-1)\/next$/,
+    /^\/(jlinx:[^\/]+)\/(\d+|-1)\/next$/,
     async (req, res) => {
       const id = req.params[0]
       const index = parseInt(req.params[1], 10)
@@ -216,10 +219,16 @@ module.exports = function (jlinx) {
       res.json({ length: doc.length })
     }
   )
-  // onChange
 
-  app.routes.get(/^\/([A-Za-z0-9\-_]{43})\/onchange$/, async (req, res) => {
+  // onChange
+  app.routes.get(/^\/(jlinx:[^\/]+)\/(\d+|-1)\/onchange$/, async (req, res) => {
     res.json({ TBD: true })
+  })
+
+  app.routes.use('*', async (req, res, next) => {
+    // catchall
+    debug('catchall route', req.url)
+    res.status(404).end()
   })
 
   app.routes.use(async (error, req, res, next) => {
@@ -228,10 +237,6 @@ module.exports = function (jlinx) {
       error: `${error}`,
       stack: error.stack.split('\n')
     })
-  })
-
-  app.routes.use(async (req, res, next) => {
-
   })
 
   return app

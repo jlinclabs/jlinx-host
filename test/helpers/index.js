@@ -5,8 +5,6 @@ const tmp = require('tmp-promise')
 const b4a = require('b4a')
 const fs = require('node:fs/promises')
 const {
-  keyToString,
-  keyToBuffer,
   createSigningKeyPair,
   sign
 } = require('jlinx-util')
@@ -19,8 +17,6 @@ Object.assign(exports, {
   test,
   timeout,
   b4a,
-  keyToString,
-  keyToBuffer,
   createSigningKeyPair,
   sign,
   createTestnet,

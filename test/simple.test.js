@@ -2,8 +2,6 @@ const {
   test,
   createTestnet,
   b4a,
-  keyToBuffer,
-  keyToString,
   createSigningKeyPair,
   sign
 } = require('./helpers/index.js')
@@ -15,9 +13,10 @@ test('simple', async (t) => {
   const ownerKeyPair = createSigningKeyPair()
   const ownerSigningKey = ownerKeyPair.publicKey
   const ownerSigningKeyProof = sign(
-    keyToBuffer(host.publicKey),
+    host.publicKey,
     ownerKeyPair.secretKey
   )
+
   const doc = await host.create({
     ownerSigningKey,
     ownerSigningKeyProof
@@ -73,7 +72,7 @@ test('sync across hosts', async (t, createHost) => {
   const ownerKeyPair = createSigningKeyPair()
   const ownerSigningKey = ownerKeyPair.publicKey
   const ownerSigningKeyProof = sign(
-    keyToBuffer(host1.publicKey),
+    host1.publicKey,
     ownerKeyPair.secretKey
   )
   const doc1 = await host1.create({
@@ -81,7 +80,7 @@ test('sync across hosts', async (t, createHost) => {
     ownerSigningKeyProof
   })
 
-  t.not(doc1.id, keyToString(ownerKeyPair.publicKey))
+  t.not(doc1.id, ownerKeyPair.publicKey)
   t.alike(doc1.length, 0)
   t.ok(doc1.writable)
 

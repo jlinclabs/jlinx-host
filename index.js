@@ -1,9 +1,8 @@
 const Debug = require('debug')
 const Path = require('path')
 const JlinxNode = require('jlinx-node')
+const JlinxId = require('jlinx-util/JlinxId')
 const {
-  keyToBuffer,
-  keyToString,
   verify,
   createSigningKeyPair,
   validateSigningKeyPair
@@ -27,7 +26,7 @@ module.exports = class JlinxHost {
       throw new Error('invalid jlinx host signing key pair')
     }
     this.keyPair = opts.keyPair
-    this.publicKey = keyToString(this.keyPair.publicKey)
+    this.publicKey = this.keyPair.publicKey
 
     this.vault = new Vault({
       path: Path.join(this.storagePath, 'vault'),
@@ -72,7 +71,7 @@ module.exports = class JlinxHost {
   }) {
     debug('create', { ownerSigningKey })
     const validProof = verify(
-      keyToBuffer(this.publicKey),
+      this.publicKey,
       ownerSigningKeyProof,
       ownerSigningKey
     )
@@ -81,7 +80,7 @@ module.exports = class JlinxHost {
       throw new Error('invalid ownerSigningKeyProof')
     }
     const { publicKey, secretKey } = createSigningKeyPair()
-    const id = keyToString(publicKey)
+    const id = JlinxId.toString(publicKey)
     debug('created', { id })
     await this.hostKeys.set(id, secretKey)
     await this.ownerKeys.set(id, ownerSigningKey)
@@ -91,8 +90,10 @@ module.exports = class JlinxHost {
   }
 
   async get (id) {
+    debug('get', { id })
     const secretKey = await this.hostKeys.get(id)
     const core = await this.node.get(id, secretKey)
+    debug('get', { core })
     const ownerSigningKey = await this.ownerKeys.get(id)
     const doc = Document.open({ id, core, ownerSigningKey })
     return doc

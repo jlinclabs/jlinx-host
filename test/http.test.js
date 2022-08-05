@@ -1,10 +1,10 @@
 const request = require('supertest')
+const multibase = require('jlinx-util/multibase')
+const { isPublicKey } = require('jlinx-util')
 const {
   test,
   createTestnet,
   b4a,
-  keyToBuffer,
-  keyToString,
   createSigningKeyPair,
   sign
 } = require('./helpers/index.js')
@@ -22,14 +22,14 @@ test('http', async (t, createHost) => {
       const { status, publicKey } = res.body
       t.is(status, 'ok')
       t.is(typeof publicKey, 'string')
-      console.log({ publicKey }, publicKey.length)
-      t.is(publicKey.length, 44)
+      t.is(publicKey.length, 65)
+      t.ok(isPublicKey(publicKey), 'invalid publicKey')
       hostPublicKey = publicKey
     })
 
   t.alike(
-    hostPublicKey,
-    keyToString(app1.jlinx.keyPair.publicKey)
+    multibase.toBuffer(hostPublicKey),
+    app1.jlinx.keyPair.publicKey
   )
 
   await request(app1.url)
@@ -39,7 +39,7 @@ test('http', async (t, createHost) => {
   const ownerKeyPair = createSigningKeyPair()
   const ownerSigningKey = ownerKeyPair.publicKey
   const ownerSigningKeyProof = sign(
-    keyToBuffer(hostPublicKey),
+    multibase.toBuffer(hostPublicKey),
     ownerKeyPair.secretKey
   )
 
@@ -55,6 +55,7 @@ test('http', async (t, createHost) => {
       const { id } = res.body
       return id
     })
+  console.log({ id1 })
 
   await request(app1.url)
     .get(`/${id1}`)
