@@ -36,6 +36,7 @@ module.exports = class Document {
   }
 
   ready () { return this._opening }
+  close () { return this.core.close() }
 
   async _open () {
     debug('opening (core.ready)', this)

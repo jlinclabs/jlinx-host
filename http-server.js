@@ -31,10 +31,6 @@ module.exports = function (jlinx) {
     if (app.server) return app.server.close()
   }
 
-  // app.use(express.static(__dirname + '/public'));
-  // app.use(bodyParser.urlencoded({ extended: false }))
-  // app.use(bodyParser.json({ }))
-
   const jsonBodyParser = bodyParser.json({
     // limit: 999999,
     limit: 102400 * 10
@@ -94,13 +90,14 @@ module.exports = function (jlinx) {
         ownerSigningKey: Buffer.from(ownerSigningKey, 'hex'),
         ownerSigningKeyProof: Buffer.from(ownerSigningKeyProof, 'hex')
       })
-      res.status(201).json({ id: doc.id, length: doc.length })
+      const body = { id: doc.id, length: doc.length }
+      await doc.close()
+      res.status(201).json(body)
     }
   )
 
   // getHeader (id)
-  // app.routes.get(/^\/([A-Za-z0-9\-_]{43})$/, async (req, res) => {
-  app.routes.get(/^\/(jlinx:[^\/]+)$/, async (req, res) => {
+  app.routes.get(/^\/(jlinx:[^/]+)$/, async (req, res) => {
     const id = req.params[0]
     debug('getHeader', { id })
     const doc = await jlinx.get(id)
@@ -108,17 +105,20 @@ module.exports = function (jlinx) {
     await doc.update()
     debug('getHeader updated', { doc })
     const header = await doc.getHeader()
+    await doc.close()
     res.json(header)
   })
 
   // stream (id)
-  // app.routes.get(/^\/([A-Za-z0-9\-_]{43})\/stream$/, async (req, res) => {
-  app.routes.get(/^\/(jlinx:[^\/]+)\/stream$/, async (req, res) => {
+  app.routes.get(/^\/(jlinx:[^/]+)\/stream$/, async (req, res) => {
     const id = req.params[0]
     debug('stream', { id })
     const doc = await jlinx.get(id)
     let closed = false
-    req.on('close', function () { closed = true })
+    req.on('close', function () {
+      closed = true
+      doc.close()
+    })
     res.set({
       'Cache-Control': 'no-cache',
       'Content-Type': 'text/event-stream',
@@ -147,7 +147,7 @@ module.exports = function (jlinx) {
   })
 
   // getEntry (id, index)
-  app.routes.get(/^\/(jlinx:[^\/]+)\/(\d+)$/, async (req, res) => {
+  app.routes.get(/^\/(jlinx:[^/]+)\/(\d+)$/, async (req, res) => {
     const id = req.params[0]
     const index = parseInt(req.params[1], 10)
     debug('getEntry', { id, index })
@@ -171,12 +171,13 @@ module.exports = function (jlinx) {
       }
     }
     const entry = await doc.get(index)
+    await doc.close()
     res.send(entry)
   })
 
   // append
   app.routes.post(
-    /^\/(jlinx:[^\/]+)$/,
+    /^\/(jlinx:[^/]+)$/,
     bodyParser.raw({
       limit: 102400 * 10
     }),
@@ -193,6 +194,7 @@ module.exports = function (jlinx) {
         }
         await doc.append(block, signature)
         const length = doc.length
+        await doc.close()
         res.status(200).json({ length })
         debug('append success', { id, length })
       } catch (error) {
@@ -206,8 +208,9 @@ module.exports = function (jlinx) {
     }
   )
 
+  // wait for next update
   app.routes.get(
-    /^\/(jlinx:[^\/]+)\/(\d+|-1)\/next$/,
+    /^\/(jlinx:[^/]+)\/(\d+|-1)\/next$/,
     async (req, res) => {
       const id = req.params[0]
       const index = parseInt(req.params[1], 10)
@@ -215,15 +218,12 @@ module.exports = function (jlinx) {
       debug('waitForUpdate', { id, length })
       const doc = await jlinx.get(id)
       await doc.waitForUpdate(length)
-      debug('waitForUpdate', { id, length, nextLength: doc.length })
-      res.json({ length: doc.length })
+      const nextLength = doc.length
+      await doc.close()
+      debug('waitForUpdate', { id, length, nextLength })
+      res.json({ length: nextLength })
     }
   )
-
-  // onChange
-  app.routes.get(/^\/(jlinx:[^\/]+)\/(\d+|-1)\/onchange$/, async (req, res) => {
-    res.json({ TBD: true })
-  })
 
   app.routes.use('*', async (req, res, next) => {
     // catchall
@@ -233,10 +233,15 @@ module.exports = function (jlinx) {
 
   app.routes.use(async (error, req, res, next) => {
     debug('ERROR', error)
-    res.status(500).json({
-      error: `${error}`,
-      stack: error.stack.split('\n')
-    })
+    if (res.headersSent) {
+      console.error(error)
+      return next()
+    } else {
+      res.status(500).json({
+        error: `${error}`,
+        stack: error.stack.split('\n')
+      })
+    }
   })
 
   return app

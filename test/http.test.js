@@ -1,3 +1,4 @@
+const { timeout } = require('nonsynchronous')
 const request = require('supertest')
 const multibase = require('jlinx-util/multibase')
 const { isPublicKey } = require('jlinx-util')
@@ -13,6 +14,12 @@ test('http', async (t, createHost) => {
   const { createHttpServers } = await createTestnet(t)
   const [app1, app2] = await createHttpServers(2)
 
+  const expectNoCoresToBeOpen = async () => {
+    await timeout(100)
+    t.is(app1.jlinx.node.cores._sessions.size, 0, 'app1 left some hypercores open')
+    t.is(app2.jlinx.node.cores._sessions.size, 0, 'app2 left some hypercores open')
+  }
+
   let hostPublicKey
   await request(app1.url)
     .get('/')
@@ -27,6 +34,8 @@ test('http', async (t, createHost) => {
       hostPublicKey = publicKey
     })
 
+  await expectNoCoresToBeOpen()
+
   t.alike(
     multibase.toBuffer(hostPublicKey),
     app1.jlinx.keyPair.publicKey
@@ -35,6 +44,8 @@ test('http', async (t, createHost) => {
   await request(app1.url)
     .post('/create')
     .expect(400)
+
+  await expectNoCoresToBeOpen()
 
   const ownerKeyPair = createSigningKeyPair()
   const ownerSigningKey = ownerKeyPair.publicKey
@@ -55,7 +66,8 @@ test('http', async (t, createHost) => {
       const { id } = res.body
       return id
     })
-  console.log({ id1 })
+
+  await expectNoCoresToBeOpen()
 
   await request(app1.url)
     .get(`/${id1}`)
@@ -64,6 +76,8 @@ test('http', async (t, createHost) => {
     .then(res => {
       t.alike(res.body.length, 0)
     })
+
+  await expectNoCoresToBeOpen()
 
   const block1 = b4a.from(
     JSON.stringify({ block: 1 })
@@ -80,6 +94,8 @@ test('http', async (t, createHost) => {
     .send(block1)
     .expect(200)
 
+  await expectNoCoresToBeOpen()
+
   await request(app1.url)
     .get(`/${id1}`)
     .expect('Content-Type', /json/)
@@ -87,6 +103,8 @@ test('http', async (t, createHost) => {
     .then(res => {
       t.alike(res.body.length, 1)
     })
+
+  await expectNoCoresToBeOpen()
 
   await request(app1.url)
     .get(`/${id1}/0`)
@@ -96,6 +114,8 @@ test('http', async (t, createHost) => {
     .then(res => {
       t.alike(res.body, block1)
     })
+
+  await expectNoCoresToBeOpen()
 
   await request(app2.url)
     .get(`/${id1}/0`)
@@ -105,6 +125,8 @@ test('http', async (t, createHost) => {
     .then(res => {
       t.alike(res.body, block1)
     })
+
+  await expectNoCoresToBeOpen()
 
   const block2 = b4a.from(
     JSON.stringify({ block: 2 })
@@ -137,6 +159,8 @@ test('http', async (t, createHost) => {
   await gotNextUpdate
   await nextRequestPromise
 
+  await expectNoCoresToBeOpen()
+
   await request(app2.url)
     .get(`/${id1}/1`)
     .expect('Content-Type', 'application/octet-stream')
@@ -145,6 +169,8 @@ test('http', async (t, createHost) => {
     .then(res => {
       t.alike(res.body, block2)
     })
+
+  await expectNoCoresToBeOpen()
 })
 
 // TODO test that hypercores are closed after each request
