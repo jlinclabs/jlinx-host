@@ -43,8 +43,17 @@ module.exports = function (jlinx) {
   app.routes = new ExpressPromiseRouter()
   app.use(app.routes)
 
+  let idSeq = 0
   app.routes.use(async (req, res, next) => {
-    debug(req.method, req.url)
+    const id = idSeq++
+    debug('REQ open', id, req.method, req.url)
+    res.on('close', () => {
+      debug('REQ close ', id, {
+        statusCode: res.statusCode,
+        header: res.header()
+      })
+    })
+
     try {
       await app.ready
     } catch (error) {
@@ -219,6 +228,10 @@ module.exports = function (jlinx) {
       error: `${error}`,
       stack: error.stack.split('\n')
     })
+  })
+
+  app.routes.use(async (req, res, next) => {
+
   })
 
   return app
