@@ -144,3 +144,8 @@ test('http', async (t, createHost) => {
       t.alike(res.body, block2)
     })
 })
+
+
+test('hypercores are closed', async (t, createHost) => {
+  // TODO test that hypercores are closed after each request
+})
