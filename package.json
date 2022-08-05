@@ -30,9 +30,9 @@
     "dotenv": "^16.0.1",
     "express": "^4.18.1",
     "express-promise-router": "^4.1.1",
-    "jlinx-node": "github:jlinclabs/jlinx-node#0ef2448552f009d419847b1ceadcd0d40a430594",
-    "jlinx-util": "github:jlinclabs/jlinx-util#774b8c1e9bc683d59c38a502e0d3e5d6a2a765b6",
-    "jlinx-vault": "github:jlinclabs/jlinx-vault#6890b1dfa17a2f8654c68734897f0bb34b5a57fa"
+    "jlinx-node": "github:jlinclabs/jlinx-node#f2ca799bbf7802542ea78360d193653c5219b32b",
+    "jlinx-util": "github:jlinclabs/jlinx-util#a2b0141d4bc06412fd2c01940cf59d2249748a80",
+    "jlinx-vault": "github:jlinclabs/jlinx-vault#c1075cb7bf38ba65395c27840789130a9eab6f93"
   },
   "devDependencies": {
     "@hyperswarm/testnet": "^3.0.0",
